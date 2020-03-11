@@ -1,0 +1,12 @@
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\MPLibrary.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\MPLibrary.pdb
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\OpenTK.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\OpenTK.GLControl.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\STLibrary.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\Syroot.BinaryData.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\Syroot.Maths.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\bin\Debug\STLibrary.pdb
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\obj\Debug\MPLibrary.csprojAssemblyReference.cache
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\obj\Debug\MPLibrary.csproj.CopyComplete
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\obj\Debug\MPLibrary.dll
+C:\Users\Nathan\source\repos\MPLibrary\MPLibrary\obj\Debug\MPLibrary.pdb
