@@ -97,6 +97,14 @@ namespace MPLibrary
         public bool HasRigging => RiggingInfo != null;
     }
 
+    public class EffectMesh
+    {
+        public string Name { get; set; }
+
+        public List<Vector3> Positions = new List<Vector3>();
+        public List<Vector3> Normals = new List<Vector3>();
+    }
+
     public class RiggingInfo
     {
         public List<RiggingSingleBind> SingleBinds = new List<RiggingSingleBind>();

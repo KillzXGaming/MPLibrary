@@ -10,7 +10,7 @@ namespace MPLibrary
 {
     public class PositionSection : HSFSection
     {
-        public List<ComponentData> Components;
+        public List<ComponentData> Components = new List<ComponentData>();
 
         public override void Read(FileReader reader, HsfFile header)
         {

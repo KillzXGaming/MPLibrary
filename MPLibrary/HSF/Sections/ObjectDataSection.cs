@@ -51,8 +51,8 @@ namespace MPLibrary
         public int CluserSymbolIndex;
         public int HookFlag;
         public int CenvIndex;
-        public int FileOffset1;
-        public int FileOffset2;
+        public int PositionsOffset;
+        public int NormalsOffset;
     }
 
 
@@ -61,28 +61,42 @@ namespace MPLibrary
         public List<ObjectData> Objects = new List<ObjectData>();
         public List<string> ObjectNames = new List<string>();
 
+        public List<EffectMesh> Meshes = new List<EffectMesh>();
+
         public override void Read(FileReader reader, HsfFile header) {
             Objects = reader.ReadMultipleStructs<ObjectData>(this.Count);
             for (int i = 0; i < Objects.Count; i++) {
                 ObjectNames.Add(header.GetString(reader, Objects[i].StringOffset));
-
-                Console.WriteLine($"{Objects[i].Type} {ObjectNames[i]} {Objects[i].FileOffset1}");
             }
-            List<ObjectData> orderedFile1 = Objects.OrderBy(x => x.FileOffset1).ToList();
-            for (int i = 0; i < orderedFile1.Count; i++)
+
+            //Read additional custom effect meshes
+            List<uint> readMeshes = new List<uint>();
+            for (int i = 0; i < Objects.Count; i++)
             {
-                if (i < orderedFile1.Count - 1 && orderedFile1[i + 1].FileOffset1 == orderedFile1[i].FileOffset1)
+                if (Objects[i].VertexIndex < 0 || readMeshes.Contains((uint)Objects[i].PositionsOffset))
                     continue;
 
-                int index = Objects.IndexOf(orderedFile1[i]);
-                int size = 0;
-                if (i < orderedFile1.Count - 1)
-                    size = orderedFile1[i + 1].FileOffset1 - orderedFile1[i].FileOffset1;
+                EffectMesh mesh = new EffectMesh();
+                Meshes.Add(mesh);
 
-                int posIndex = orderedFile1[i].VertexIndex;
-                if (posIndex > 0)
-                    Console.WriteLine($"{ObjectNames[index]} {orderedFile1[i].FileOffset1} size {size} vertex" +
-                        $" {header.PositionData.Components[posIndex].DataCount * 12}");
+                readMeshes.Add((uint)Objects[i].PositionsOffset);
+
+                var comp = header.PositionData.Components[Objects[i].VertexIndex];
+                mesh.Name = header.GetString(reader, comp.StringOffset);
+                using (reader.TemporarySeek(Objects[i].PositionsOffset, System.IO.SeekOrigin.Begin))
+                {
+                    for (int j = 0; j < comp.DataCount; j++)
+                        mesh.Positions.Add(reader.ReadVec3());
+                }
+
+                if (Objects[i].NormalIndex < 0) {
+                    var normalData = header.NormalData.Components[Objects[i].NormalIndex];
+                    using (reader.TemporarySeek(Objects[i].NormalsOffset, System.IO.SeekOrigin.Begin))
+                    {
+                        for (int j = 0; j < comp.DataCount; j++)
+                            mesh.Normals.Add(reader.ReadVec3());
+                    }
+                }
             }
         }
 

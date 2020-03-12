@@ -10,6 +10,8 @@ namespace MPLibrary
 {
     public class NormalSection : HSFSection
     {
+        public List<ComponentData> Components = new List<ComponentData>();
+
         public DataType TypeFlag;
 
         public enum DataType
@@ -20,7 +22,7 @@ namespace MPLibrary
 
         public override void Read(FileReader reader, HsfFile header)
         {
-            List<ComponentData> Components = reader.ReadMultipleStructs<ComponentData>(this.Count);
+            Components = reader.ReadMultipleStructs<ComponentData>(this.Count);
             long startingOffset = reader.Position;
             TypeFlag = DataType.Float;
 
