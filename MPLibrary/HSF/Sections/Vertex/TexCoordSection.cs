@@ -22,13 +22,13 @@ namespace MPLibrary
                 for (int i = 0; i < comp.DataCount; i++)
                     uvs.Add(reader.ReadVec2());
 
-                header.AddUVComponent(reader, comp, uvs);
+                header.AddUVComponent(Components.IndexOf(comp), uvs);
             }
         }
 
         public override void Write(FileWriter writer, HsfFile header)
         {
-            var meshes = header.GetAllMeshes().Where(x => x.TexCoords.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.TexCoords.Count > 0).ToList();
 
             long posStart = writer.Position;
             foreach (var mesh in meshes)
@@ -46,6 +46,7 @@ namespace MPLibrary
                 for (int j = 0; j < meshes[i].TexCoords.Count; j++)
                     writer.Write(meshes[i].TexCoords[j]);
             }
+            writer.Align(4);
         }
     }
 

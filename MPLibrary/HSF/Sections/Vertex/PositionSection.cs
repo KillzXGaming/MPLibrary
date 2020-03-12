@@ -23,7 +23,7 @@ namespace MPLibrary
                 for (int i = 0; i < comp.DataCount; i++)
                     positions.Add(reader.ReadVec3());
 
-                header.AddPositionComponent(reader, comp, positions);
+                header.AddPositionComponent(Components.IndexOf(comp), positions);
             }
         }
 
@@ -31,7 +31,7 @@ namespace MPLibrary
         {
             long posStart = writer.Position;
 
-            var meshes = header.GetAllMeshes().Where(x => x.Positions.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.Positions.Count > 0).ToList();
             foreach (var mesh in meshes)
             {
                 writer.Write(header.GetStringOffset(mesh.Name));
@@ -46,7 +46,7 @@ namespace MPLibrary
                 for (int j = 0; j < meshes[i].Positions.Count; j++)
                     writer.Write(meshes[i].Positions[j]);
             }
-            writer.Align(8);
+            writer.Align(4);
         }
     }
 

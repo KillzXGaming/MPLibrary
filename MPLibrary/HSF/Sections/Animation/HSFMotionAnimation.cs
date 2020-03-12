@@ -153,6 +153,7 @@ namespace MPLibrary
         public TrackEffect TrackEffect;
 
         public float Constant;
+        public short ConstantUnk;
         public short Type;
         public byte Unknown;
         public short ValueIdx;

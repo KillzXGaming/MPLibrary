@@ -53,9 +53,9 @@ namespace MPLibrary
                     if (prim.Type == PrimitiveType.TriangleStrip) {
                         primCount = reader.ReadInt32();
                         var offset = reader.ReadUInt32();
-
                         var temp = reader.Position;
                         reader.Position = ExtOffset + offset * 8;
+
                         var verts = reader.ReadMultipleStructs<VertexGroup>(primCount).ToArray();
                         reader.Position = temp;
 
@@ -69,20 +69,15 @@ namespace MPLibrary
                     prim.NbtData = reader.ReadVec3();
                 }
 
-                header.AddPrimitiveComponent(reader, comp, primatives);
+                header.AddPrimitiveComponent(Components.IndexOf(comp), primatives);
             }
         }
 
         public override void Write(FileWriter writer, HsfFile header)
         {
-            var meshes = header.GetAllMeshes().Where(x => x.Primitives.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.Primitives.Count > 0).ToList();
 
             long posStart = writer.Position;
-
-            var ExtOffset = posStart;
-            foreach (var mesh in meshes)
-                ExtOffset += mesh.Primitives.Count * 48;
-            var triangleStripPosition = ExtOffset;
 
             foreach (var mesh in meshes)
             {
@@ -90,6 +85,14 @@ namespace MPLibrary
                 writer.Write(mesh.Primitives.Count);
                 writer.Write(uint.MaxValue);
             }
+
+
+            long dataStart = writer.Position;
+
+            var ExtOffset = dataStart;
+            foreach (var mesh in meshes)
+                ExtOffset += mesh.Primitives.Count * 48;
+            var triangleStripPosition = ExtOffset;
 
             int meshIndex = 0;
             long dataPos = writer.Position;
@@ -104,19 +107,22 @@ namespace MPLibrary
                     int primCount = 3;
                     if (primitive.Type == PrimitiveType.Triangle || primitive.Type == PrimitiveType.Quad)
                         primCount = 4;
+
                     for (int i = 0; i < primCount; i++)
                         writer.WriteStruct(primitive.Vertices[i]);
 
                     if (primitive.Type == PrimitiveType.TriangleStrip)
                     {
-                        writer.Write((uint)(primitive.Vertices.Length - 3));
+                        writer.Write((uint)(primitive.Vertices.Length - 4));
                         long stripOffsetPos = writer.Position;
-                        writer.Write(uint.MaxValue);
+                        long offset = triangleStripPosition - ExtOffset;
+                        if (offset != 0)
+                            offset /= 8;
+                        writer.Write((uint)offset);
 
                         using (writer.TemporarySeek(triangleStripPosition, System.IO.SeekOrigin.Begin))
                         {
-                            writer.WriteUint32Offset(stripOffsetPos, ExtOffset);
-                            for (int i = 2; i < primitive.Vertices.Length; i++)
+                            for (int i = 4; i < primitive.Vertices.Length; i++)
                                 writer.WriteStruct(primitive.Vertices[i]);
 
                             triangleStripPosition = writer.Position;
@@ -127,16 +133,7 @@ namespace MPLibrary
                 meshIndex++;
             }
 
-          /*  foreach (var mesh in header.Meshes.Values)
-            {
-                foreach (var primitive in mesh.Primitives)
-                {
-                    if (primitive.Type == PrimitiveType.TriangleStrip)
-                    {
-
-                    }
-                }
-            }*/
+            writer.SeekBegin(triangleStripPosition);
         }
     }
 

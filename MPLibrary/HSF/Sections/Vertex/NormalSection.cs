@@ -43,17 +43,20 @@ namespace MPLibrary
                 for (int i = 0; i < comp.DataCount; i++)
                 {
                     if (TypeFlag == DataType.Sbyte)
-                        normals.Add(new Vector3(reader.ReadSByte(), reader.ReadSByte(), reader.ReadSByte()));
+                        normals.Add(new Vector3
+                            (reader.ReadSByte(), 
+                             reader.ReadSByte(),
+                             reader.ReadSByte()));
                     else
                         normals.Add(new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
                 }
-                header.AddNormalComponent(reader, comp, normals);
+                header.AddNormalComponent(Components.IndexOf(comp), normals);
             }
         }
 
         public override void Write(FileWriter writer, HsfFile header)
         {
-            var meshes = header.GetAllMeshes().Where(x => x.Positions.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.Positions.Count > 0).ToList();
 
             long posStart = writer.Position;
             foreach (var mesh in meshes)
@@ -80,6 +83,7 @@ namespace MPLibrary
                         writer.Write(meshes[i].Normals[j]);
                 }
             }
+            writer.Align(4);
         }
     }
 

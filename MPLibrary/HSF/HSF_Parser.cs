@@ -15,72 +15,6 @@ namespace MPLibrary
         void Write(FileWriter reader, HsfFile header);
     }
 
-    public class MeshGroup
-    {
-        public string Name { get; set; }
-        public List<Mesh> Meshes = new List<Mesh>();
-
-        public void AddPositions(List<Vector3> positions)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => x.Positions.Count == 0);
-            if (mesh != null)
-                mesh.Positions = positions;
-            else
-                Meshes.Add(new Mesh() {Name = Name, Positions = positions });
-        }
-
-        public void AddNormals(List<Vector3> normals)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => x.Normals.Count == 0);
-            if (mesh != null)
-                mesh.Normals = normals;
-            else
-                Meshes.Add(new Mesh() { Name = Name, Normals = normals });
-        }
-
-        public void AddTexCoords(List<Vector2> texCoords)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => x.TexCoords.Count == 0);
-            if (mesh != null)
-                mesh.TexCoords = texCoords;
-            else
-                Meshes.Add(new Mesh() { Name = Name, TexCoords = texCoords });
-        }
-
-        public void AddColors(List<Vector4> colors)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => x.Colors.Count == 0);
-            if (mesh != null)
-                mesh.Colors = colors;
-            else
-                Meshes.Add(new Mesh() { Name = Name, Colors = colors });
-        }
-
-        public void AddPrimitives(List<PrimitiveObject> primitives)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => x.Primitives.Count == 0);
-            if (mesh != null)
-                mesh.Primitives = primitives;
-            else
-                Meshes.Add(new Mesh() { Name = Name, Primitives = primitives });
-        }
-
-        public void AddRigging(RiggingInfo rigging)
-        {
-            //Find first mesh that has no values
-            var mesh = Meshes.FirstOrDefault(x => !x.HasRigging);
-            if (mesh != null)
-                mesh.RiggingInfo = rigging;
-            else
-                Meshes.Add(new Mesh() { Name = Name, RiggingInfo = rigging });
-        }
-    }
-
     public class Mesh
     {
         public string Name { get; set; }
@@ -95,6 +29,13 @@ namespace MPLibrary
         public RiggingInfo RiggingInfo;
 
         public bool HasRigging => RiggingInfo != null;
+
+        public ObjectData ObjectData;
+
+        public Mesh(ObjectData objectData, string name) {
+            ObjectData = objectData;
+            Name = name;
+        }
     }
 
     public class EffectMesh
@@ -116,12 +57,17 @@ namespace MPLibrary
         public List<RiggingDoubleWeight> DoubleWeights = new List<RiggingDoubleWeight>();
         public List<RiggingMultiWeight> MultiWeights = new List<RiggingMultiWeight>();
 
+        public uint VertexCount;
+        public uint Unknown; //0xCCCCCCCC (Usually that value if value is null and unused)
+
         public uint SingleBind;
     }
 
     //Parser based on https://github.com/Ploaj/Metanoia/blob/master/Metanoia/Formats/GameCube/HSF.cs
     public class HsfFile
     {
+        internal static string NullString => "<0>";
+
         public FogSection FogData = new FogSection();
         public ColorSection ColorData = new ColorSection();
         public MaterialSection MaterialData = new MaterialSection();
@@ -152,15 +98,7 @@ namespace MPLibrary
         internal uint StringTableOffset = 0;
         internal uint StringTableSize = 0;
 
-        public Dictionary<string, MeshGroup> Meshes = new Dictionary<string, MeshGroup>();
-
-        public List<Mesh> GetAllMeshes()
-        {
-            List<Mesh> meshes = new List<Mesh>();
-            foreach (var group in Meshes.Values)
-                meshes.AddRange(group.Meshes);
-            return meshes;
-        }
+        public List<Mesh> Meshes = new List<Mesh>();
 
         public int TextureCount => TextureData.Textures.Count;
 
@@ -184,6 +122,17 @@ namespace MPLibrary
                 StringTableSize = reader.ReadUInt32();
             }
 
+            //Next get object data. This section is necessary to link data
+            using (reader.TemporarySeek(72, System.IO.SeekOrigin.Begin)) {
+                ObjectData = ReadSection<ObjectDataSection>(reader, this); //Nodes/bones
+            }
+
+            //Create a list of all the meshes from objects
+            for (int i = 0; i < ObjectData.Objects.Count; i++) {
+                if (ObjectData.Objects[i].Type == ObjectType.Mesh)
+                    Meshes.Add(new Mesh(ObjectData.Objects[i], ObjectData.ObjectNames[i]));
+            }
+
             reader.ReadSignature(3, "HSF");
             Version = reader.ReadString(4, Encoding.ASCII); //Always V037?
             reader.ReadByte();
@@ -195,7 +144,7 @@ namespace MPLibrary
             NormalData = ReadSection<NormalSection>(reader, this);
             TexCoordData = ReadSection<TexCoordSection>(reader, this);
             FaceData = ReadSection<FaceDataSection>(reader, this); //Primative face data
-            ObjectData = ReadSection<ObjectDataSection>(reader, this); //Nodes/bones
+            reader.Seek(8); //Object data (already read from above)
             TextureData = ReadSection<TextureSection>(reader, this);
             PaletteData = ReadSection<PaletteSection>(reader, this);
             MotionData = ReadSection<MotionDataSection>(reader, this);
@@ -220,7 +169,7 @@ namespace MPLibrary
 
         internal int GetStringOffset(string name)
         {
-            if (name == string.Empty)
+            if (name == NullString)
                 return -1;
 
             if (savedStrings.ContainsKey(name))
@@ -255,16 +204,13 @@ namespace MPLibrary
             var numUsedNormals =0;
             var numUsedPrimitives = 0;
             var numUsedRigs = 0;
-            foreach (var meshGroup in Meshes.Values) {
-                foreach (var mesh in meshGroup.Meshes)
-                {
-                    if (mesh.Positions.Count > 0) numUsedPositions++;
-                    if (mesh.Normals.Count > 0) numUsedNormals++;
-                    if (mesh.TexCoords.Count > 0) numUsedTexCoords++;
-                    if (mesh.Colors.Count > 0) numUsedColors++;
-                    if (mesh.Primitives.Count > 0) numUsedPrimitives++;
-                    if (mesh.HasRigging) numUsedRigs++;
-                }
+            foreach (var mesh in Meshes) {
+                if (mesh.Positions.Count > 0) numUsedPositions++;
+                if (mesh.Normals.Count > 0) numUsedNormals++;
+                if (mesh.TexCoords.Count > 0) numUsedTexCoords++;
+                if (mesh.Colors.Count > 0) numUsedColors++;
+                if (mesh.Primitives.Count > 0) numUsedPrimitives++;
+                if (mesh.HasRigging) numUsedRigs++;
             }
 
             SaveSectionHeader(writer, (uint)FogData.Count, this);
@@ -342,11 +288,6 @@ namespace MPLibrary
             if (PaletteData.PaletteData.Count > 0) {
                 PaletteData.Write(writer, this);
             }
-
-            writer.WriteUint32Offset(96);
-            if (MotionData.Animations.Count > 0) {
-                MotionData.Write(writer, this);
-            }
             writer.WriteUint32Offset(104);
             if (numUsedRigs > 0) {
                 CenvData.Write(writer, this);
@@ -355,6 +296,7 @@ namespace MPLibrary
             if (SkeletonData.Nodes.Count > 0) {
                 SkeletonData.Write(writer, this);
             }
+
             writer.WriteUint32Offset(120);
             if (PartData.Count > 0) {
                 PartData.Write(writer, this);
@@ -374,6 +316,10 @@ namespace MPLibrary
             if (MatrixData.Count > 0) {
                 writer.WriteUint32Offset(152);
                 MatrixData.Write(writer, this);
+            }
+            writer.WriteUint32Offset(96);
+            if (MotionData.Animations.Count > 0) {
+                MotionData.Write(writer, this);
             }
             if (SymbolData.Count > 0) {
                 writer.WriteUint32Offset(160);
@@ -414,17 +360,17 @@ namespace MPLibrary
             foreach (var mat in AttributeData.AttributeNames)
                 fileStrings.Add(mat);
             foreach (var mesh in Meshes)
-                fileStrings.Add(mesh.Key);
+                fileStrings.Add(mesh.Name);
             foreach (var obj in ObjectData.ObjectNames)
                 fileStrings.Add(obj);
-            foreach (var anim in MotionData.GetStrings())
-                fileStrings.Add(anim);
             foreach (var anim in TextureData.TextureNames)
+                fileStrings.Add(anim);
+            foreach (var anim in MotionData.GetStrings())
                 fileStrings.Add(anim);
 
             //Save strings to lookup dictionary
             foreach (var str in fileStrings) {
-                if (!values.ContainsKey(str) && str != string.Empty) {
+                if (!values.ContainsKey(str) && str != NullString) {
                     values.Add(str, offset);
                     offset += str.Length + 1;
                 }
@@ -434,56 +380,56 @@ namespace MPLibrary
         }
 
         //Adds a position component to the mesh
-        public void AddPositionComponent(FileReader reader, ComponentData comp, List<Vector3> positions)
+        public void AddPositionComponent(int index, List<Vector3> positions)
         {
-            var name = InitializeMeshComponent(reader, comp);
-            Meshes[name].AddPositions(positions);
+            for (int i = 0; i < Meshes.Count; i++) {
+                if (Meshes[i].ObjectData.VertexIndex == index)
+                    Meshes[i].Positions = positions;
+            }
         }
 
         //Adds a position component to the mesh
-        public void AddColorComponent(FileReader reader, ComponentData comp, List<Vector4> colors)
+        public void AddColorComponent(int index, List<Vector4> colors)
         {
-            var name = InitializeMeshComponent(reader, comp);
-            Meshes[name].AddColors(colors);
+            for (int i = 0; i < Meshes.Count; i++) {
+                if (Meshes[i].ObjectData.ColorIndex == index)
+                    Meshes[i].Colors = colors;
+            }
         }
 
         //Adds a normal component to the mesh
-        public void AddNormalComponent(FileReader reader, ComponentData comp, List<Vector3> normals)
+        public void AddNormalComponent(int index, List<Vector3> normals)
         {
-            var name = InitializeMeshComponent(reader, comp);
-            Meshes[name].AddNormals(normals);
+            for (int i = 0; i < Meshes.Count; i++) {
+                if (Meshes[i].ObjectData.NormalIndex == index)
+                    Meshes[i].Normals = normals;
+            }
         }
 
         //Adds a UV component to the mesh
-        public void AddUVComponent(FileReader reader, ComponentData comp, List<Vector2> uvs)
+        public void AddUVComponent(int index, List<Vector2> uvs)
         {
-            var name = InitializeMeshComponent(reader, comp);
-            Meshes[name].AddTexCoords(uvs);
+            for (int i = 0; i < Meshes.Count; i++)
+            {
+                if (Meshes[i].ObjectData.TexCoordIndex == index)
+                    Meshes[i].TexCoords = uvs;
+            }
         }
 
         //Adds a primitive   component to the mesh
-        public void AddPrimitiveComponent(FileReader reader, ComponentData comp, List<PrimitiveObject> primitives)
+        public void AddPrimitiveComponent(int index, List<PrimitiveObject> primitives)
         {
-            var name = InitializeMeshComponent(reader, comp);
-            Meshes[name].AddPrimitives(primitives);
-        }
-        
-
-        //Load component to the mesh lookup and return the key
-        private string InitializeMeshComponent(FileReader reader, ComponentData comp) {
-            string name = GetString(reader, comp.StringOffset);
-
-            if (!Meshes.ContainsKey(name)) {
-                Meshes.Add(name, new MeshGroup() { Name = name, });
-                Meshes[name].Meshes.Add(new Mesh() { Name = name,});
+            for (int i = 0; i < Meshes.Count; i++)
+            {
+                if (Meshes[i].ObjectData.FaceIndex == index)
+                    Meshes[i].Primitives = primitives;
             }
-            return name;
         }
 
         //Read the string from the string table given a relative offset
         public string GetString(FileReader reader, uint offset) {
             if (offset == uint.MaxValue)
-                return string.Empty;
+                return NullString;
 
             using (reader.TemporarySeek(StringTableOffset + offset, System.IO.SeekOrigin.Begin))
             {

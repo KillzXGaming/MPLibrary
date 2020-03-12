@@ -74,6 +74,10 @@ namespace MPLibrary
         public short NormalIndex;
         public short ColorIndex;
         public short UVIndex;
+
+        public override string ToString() {
+            return $"{PositionIndex} {NormalIndex} {ColorIndex} {UVIndex}";
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

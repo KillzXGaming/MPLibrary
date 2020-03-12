@@ -91,9 +91,10 @@ namespace MPLibrary
         {
             List<string> values = new List<string>();
             foreach (var anim in Animations) {
+                foreach (AnimationNode group in anim.AnimGroups)
+                    if (group.ValueIndex == 0)
+                        values.Add(group.Name);
                 values.Add(anim.Name);
-                foreach (var group in anim.AnimGroups)
-                    values.Add(group.Name);
             }
             return values;
         }
@@ -126,11 +127,11 @@ namespace MPLibrary
                     else
                         track.Constant = reader.ReadSingle();
 
-                    Console.WriteLine($"{j} TrackMode {track.mode} effect {track.effect} interp {track.interpolate_type} Constant {track.Constant}");
+                   // Console.WriteLine($"{j} TrackMode {track.mode} effect {track.effect} interp {track.interpolate_type} Constant {track.Constant}");
 
                     if (track.valueIndex != 0)
                     {
-                        Console.WriteLine($"valueIndex {track.valueIndex} str {track.stringOffset}");
+                        //Console.WriteLine($"valueIndex {track.valueIndex} str {track.stringOffset}");
                     }
 
                     anm.trackInfo.Add(track);
@@ -219,6 +220,7 @@ namespace MPLibrary
 
                     currentGroup.TrackList.Add(new AnimTrack(currentGroup)
                     {
+                        ConstantUnk = track.keyframe_count, //When constant used, value is used for something else?
                         KeyFrames = keyFrames,
                         TrackEffect = track.effect,
                         TrackMode = track.mode,
@@ -291,15 +293,25 @@ namespace MPLibrary
 
                     writer.Write((byte)track.TrackMode);
                     writer.Write((byte)track.Unknown);
-                    writer.Write((short)header.GetStringOffset(name));
+                    if (track.TrackMode ==  TrackMode.Normal || 
+                        track.TrackMode == TrackMode.Material || 
+                        track.TrackMode == TrackMode.Object)
+                        writer.Write((short)header.GetStringOffset(name));
+                    else
+                        writer.Write(ushort.MaxValue);
                     writer.Write((short)track.ValueIdx);
                     writer.Write((short)track.TrackEffect);
                     writer.Write((short)interpolation);
-                    writer.Write((short)track.KeyFrames.Count);
-                    if (track.KeyFrames.Count > 0 && track.InterpolationType != STInterpoaltionType.Constant)
+                    if (track.InterpolationType != STInterpoaltionType.Constant)
+                    {
+                        writer.Write((short)track.KeyFrames.Count);
                         writer.Write(uint.MaxValue);
+                    }
                     else
+                    {
+                        writer.Write((short)track.ConstantUnk);
                         writer.Write(track.Constant);
+                    }
                 }
             }
 
@@ -310,7 +322,6 @@ namespace MPLibrary
                 var anim = Animations[i];
                 var tracks = anim.GetAllTracks();
 
-                Console.WriteLine($"tracks {tracks.Count}");
                 for (int j = 0; j < tracks.Count; j++)
                 {
                     var track = tracks[j];
@@ -343,12 +354,12 @@ namespace MPLibrary
                                     }
                                     break;
                                 //16 bytes
-                                case STInterpoaltionType.Bezier:
+                                case STInterpoaltionType.Hermite:
                                     {
                                         writer.Write(keyFrame.Frame);
                                         writer.Write(keyFrame.Value);
-                                        writer.Write(((STBezierKeyFrame)keyFrame).SlopeIn);
-                                        writer.Write(((STBezierKeyFrame)keyFrame).SlopeOut);
+                                        writer.Write(((STHermiteKeyFrame)keyFrame).TangentIn);
+                                        writer.Write(((STHermiteKeyFrame)keyFrame).TangentOut);
                                     }
                                     break;
                                 default:

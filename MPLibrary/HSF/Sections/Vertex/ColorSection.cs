@@ -24,7 +24,7 @@ namespace MPLibrary
                         reader.ReadByte() * 255f, reader.ReadByte() * 255f,
                         reader.ReadByte() * 255f, reader.ReadByte() * 255f));
 
-                header.AddColorComponent(reader, comp, colors);
+                header.AddColorComponent(Components.IndexOf(comp), colors);
             }
         }
 
@@ -32,7 +32,7 @@ namespace MPLibrary
         {
             long posStart = writer.Position;
 
-            var meshes = header.GetAllMeshes().Where(x => x.Colors.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.Colors.Count > 0).ToList();
             foreach (var mesh in meshes)
             {
                 writer.Write(header.GetStringOffset(mesh.Name));
@@ -53,6 +53,7 @@ namespace MPLibrary
                     writer.Write((byte)(meshes[i].Colors[j].W / 255));
                 }
             }
+            writer.Align(4);
         }
     }
 

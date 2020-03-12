@@ -76,11 +76,8 @@ namespace MPLibrary
             var rigs = reader.ReadMultipleStructs<RiggeObject>(this.Count);
             long pos = reader.Position;
 
-            var meshes = header.Meshes.Keys.ToList();
             for (int i = 0; i < rigs.Count; i++)
             {
-                var mesh = header.Meshes[meshes[i]];
-
                 reader.SeekBegin(pos + rigs[i].SingleBindOffset);
                 var singleBinds = reader.ReadMultipleStructs<RiggingSingleBind>(rigs[i].SingleBindCount);
 
@@ -90,17 +87,19 @@ namespace MPLibrary
                 reader.SeekBegin(pos + rigs[i].MultiBindOffset);
                 var multiBinds = reader.ReadMultipleStructs<RiggingMultiBind>(rigs[i].MultiBindCount);
 
-                mesh.AddRigging(new RiggingInfo()
+                header.Meshes[i].RiggingInfo = new RiggingInfo()
                 {
+                    Unknown = rigs[i].Unknown,
                     SingleBinds = singleBinds,
                     DoubleBinds = doubleBinds,
                     MultiBinds = multiBinds,
+                    VertexCount = rigs[i].VertexCount,
                     SingleBind = rigs[i].SingleBind,
-                });
+                };
             }
 
             var weightStart = reader.Position;
-            foreach (var mesh in header.GetAllMeshes())
+            foreach (var mesh in header.Meshes)
             {
                 if (!mesh.HasRigging)
                     continue;
@@ -121,12 +120,99 @@ namespace MPLibrary
 
         public override void Write(FileWriter writer, HsfFile header)
         {
-            var meshes = header.GetAllMeshes().Where(x => x.HasRigging).ToList();
-
+            var meshes = header.Meshes.Where(x => x.HasRigging).ToList();
+            long startPos = writer.Position;
             foreach (var mesh in meshes)
             {
-              
+                writer.Write(mesh.RiggingInfo.Unknown);
+                writer.Write(0);
+                writer.Write(0);
+                writer.Write(0);
+                writer.Write(mesh.RiggingInfo.SingleBinds.Count);
+                writer.Write(mesh.RiggingInfo.DoubleBinds.Count);
+                writer.Write(mesh.RiggingInfo.MultiBinds.Count);
+                writer.Write(mesh.RiggingInfo.VertexCount);
+                writer.Write(mesh.RiggingInfo.SingleBind);
             }
+
+
+            var bindWeightPosition = writer.Position;
+            var doubleBindWeightSize = 0;
+            for (int i = 0; i < meshes.Count; i++) {
+                bindWeightPosition += meshes[i].RiggingInfo.SingleBinds.Count * 12;
+                bindWeightPosition += meshes[i].RiggingInfo.DoubleBinds.Count * 16;
+                bindWeightPosition += meshes[i].RiggingInfo.MultiBinds.Count * 16;
+                foreach (var bind in meshes[i].RiggingInfo.DoubleBinds)
+                    doubleBindWeightSize += bind.Count * 12;
+            }
+
+            var doubleBindWeightsOffset = bindWeightPosition;
+            var multiBindWeightsOffset = bindWeightPosition + doubleBindWeightSize;
+
+            int doubleWeightIndex = 0;
+            long indexDataPos = writer.Position;
+            for (int i = 0; i < meshes.Count; i++)
+            {
+                var mesh = meshes[i];
+                if (mesh.RiggingInfo.SingleBinds.Count > 0) {
+                    writer.WriteUint32Offset(startPos + 4 + (i * 36), indexDataPos);
+                    foreach (var bind in mesh.RiggingInfo.SingleBinds)
+                        writer.WriteStruct(bind);
+                }
+                if (mesh.RiggingInfo.DoubleBinds.Count > 0) {
+                    writer.WriteUint32Offset(startPos + 8 + (i * 36), indexDataPos);
+                    foreach (var bind in mesh.RiggingInfo.DoubleBinds)
+                    {
+                        int index = mesh.RiggingInfo.DoubleBinds.IndexOf(bind);
+
+                        writer.Write(bind.Bone1);
+                        writer.Write(bind.Bone2);
+                        writer.Write(bind.Count);
+                        long weightPos = writer.Position;
+                        writer.Write(uint.MaxValue);
+                        if (index < mesh.RiggingInfo.DoubleWeights.Count)
+                        {
+                            using (writer.TemporarySeek(doubleBindWeightsOffset, System.IO.SeekOrigin.Begin)){
+
+                                writer.WriteUint32Offset(weightPos, bindWeightPosition);
+                                for (int j = 0; j < bind.Count; j++)
+                                    writer.WriteStruct(mesh.RiggingInfo.DoubleWeights[doubleWeightIndex++]);
+                                doubleBindWeightsOffset = writer.Position;
+                            }
+                        }
+                    }
+                }
+
+                int multiWeightIndex = 0;
+                if (mesh.RiggingInfo.MultiBinds.Count > 0) {
+                    writer.WriteUint32Offset(startPos + 12 + (i * 36), indexDataPos);
+                    foreach (var bind in mesh.RiggingInfo.MultiBinds)
+                    {
+                        int index = mesh.RiggingInfo.MultiBinds.IndexOf(bind);
+
+                        writer.Write(bind.Count);
+                        writer.Write(bind.PositionIndex);
+                        writer.Write(bind.PositionCount);
+                        writer.Write(bind.NormalIndex);
+                        writer.Write(bind.NormalCount);
+
+                        long weightPos = writer.Position;
+                        writer.Write(uint.MaxValue);
+                        if (index < mesh.RiggingInfo.MultiWeights.Count)
+                        {
+                            using (writer.TemporarySeek(multiBindWeightsOffset, System.IO.SeekOrigin.Begin))
+                            {
+                                writer.WriteUint32Offset(weightPos, bindWeightPosition);
+                                for (int j = 0; j < bind.Count; j++)
+                                    writer.WriteStruct(mesh.RiggingInfo.MultiWeights[multiWeightIndex++]);
+                                multiBindWeightsOffset = writer.Position;
+                            }
+                        }
+                    }
+                }
+            }
+            writer.SeekBegin(multiBindWeightsOffset);
+            writer.Align(4);
         }
     }
 

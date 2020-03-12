@@ -62,6 +62,7 @@ namespace MPLibrary
                 mat.NameOffset = (uint)header.GetStringOffset(AttributeNames[i]);
                 writer.WriteStruct(mat);
             }
+            writer.Align(4);
         }
     }
 

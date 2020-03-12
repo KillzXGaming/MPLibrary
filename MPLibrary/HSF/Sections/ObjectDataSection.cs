@@ -63,9 +63,11 @@ namespace MPLibrary
 
         public List<EffectMesh> Meshes = new List<EffectMesh>();
 
-        public override void Read(FileReader reader, HsfFile header) {
+        public override void Read(FileReader reader, HsfFile header)
+        {
             Objects = reader.ReadMultipleStructs<ObjectData>(this.Count);
-            for (int i = 0; i < Objects.Count; i++) {
+            for (int i = 0; i < Objects.Count; i++)
+            {
                 ObjectNames.Add(header.GetString(reader, Objects[i].StringOffset));
             }
 
@@ -73,7 +75,8 @@ namespace MPLibrary
             List<uint> readMeshes = new List<uint>();
             for (int i = 0; i < Objects.Count; i++)
             {
-                if (Objects[i].VertexIndex < 0 || readMeshes.Contains((uint)Objects[i].PositionsOffset))
+                if (Objects[i].PositionsOffset == 0 || Objects[i].VertexIndex < 0 || 
+                    readMeshes.Contains((uint)Objects[i].PositionsOffset))
                     continue;
 
                 EffectMesh mesh = new EffectMesh();
@@ -89,7 +92,8 @@ namespace MPLibrary
                         mesh.Positions.Add(reader.ReadVec3());
                 }
 
-                if (Objects[i].NormalIndex < 0) {
+                if (Objects[i].NormalIndex >= 0)
+                {
                     var normalData = header.NormalData.Components[Objects[i].NormalIndex];
                     using (reader.TemporarySeek(Objects[i].NormalsOffset, System.IO.SeekOrigin.Begin))
                     {
@@ -100,8 +104,10 @@ namespace MPLibrary
             }
         }
 
-        public override void Write(FileWriter writer, HsfFile header) {
-            for (int i = 0; i < Objects.Count; i++) {
+        public override void Write(FileWriter writer, HsfFile header)
+        {
+            for (int i = 0; i < Objects.Count; i++)
+            {
                 var obj = Objects[i];
                 obj.StringOffset = (uint)header.GetStringOffset(ObjectNames[i]);
                 writer.WriteStruct(obj);
@@ -110,21 +116,22 @@ namespace MPLibrary
 
         public void WriteEffectPositions(FileWriter writer, HsfFile header)
         {
+            if (Meshes.Count == 0)
+                return;
+
             List<EffectMesh> readMeshes = new List<EffectMesh>();
 
             var ObjectsSorted = Objects.OrderBy(x => x.VertexIndex).ToList();
 
             for (int i = 0; i < ObjectsSorted.Count; i++)
             {
-                if (ObjectsSorted[i].VertexIndex >= 0)
+                if (ObjectsSorted[i].VertexIndex >= 0 && Meshes.Count > ObjectsSorted[i].VertexIndex)
                 {
                     var effectMesh = Meshes[ObjectsSorted[i].VertexIndex];
                     int index = Objects.IndexOf(ObjectsSorted[i]);
                     if (!readMeshes.Contains(effectMesh))
                     {
                         writer.Align(0x20);
-                        Console.WriteLine($"Vert {ObjectsSorted[i].VertexIndex} {ObjectsSorted[i].PositionsOffset} {ObjectsSorted[i].NormalsOffset}");
-
                         effectMesh.PositionOffset = (uint)writer.Position;
                         for (int j = 0; j < effectMesh.Positions.Count; j++)
                             writer.Write(effectMesh.Positions[j]);
@@ -139,13 +146,19 @@ namespace MPLibrary
 
         public void WriteEffectNormals(FileWriter writer, HsfFile header)
         {
+            if (Meshes.Count == 0)
+                return;
+
             List<EffectMesh> readMeshes = new List<EffectMesh>();
 
-            for (int i = 0; i < Objects.Count; i++)
+            var ObjectsSorted = Objects.OrderBy(x => x.VertexIndex).ToList();
+
+            for (int i = 0; i < ObjectsSorted.Count; i++)
             {
-                if (Objects[i].VertexIndex >= 0)
+                if (ObjectsSorted[i].VertexIndex >= 0 && Meshes.Count > ObjectsSorted[i].VertexIndex)
                 {
-                    var effectMesh = Meshes[Objects[i].VertexIndex];
+                    var effectMesh = Meshes[ObjectsSorted[i].VertexIndex];
+                    int index = Objects.IndexOf(ObjectsSorted[i]);
                     if (!readMeshes.Contains(effectMesh))
                     {
                         writer.Align(0x20);
@@ -155,12 +168,10 @@ namespace MPLibrary
 
                         readMeshes.Add(effectMesh);
                     }
-                    var obj = Objects[i];
+                    var obj = Objects[index];
                     obj.NormalsOffset = (int)effectMesh.NormalOffset;
                 }
             }
         }
-
     }
-
 }

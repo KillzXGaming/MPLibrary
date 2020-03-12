@@ -44,6 +44,7 @@ namespace MPLibrary
                 writer.WriteUint32Offset(startPos + 12 + (i * 16), dataPos);
                 writer.Write(PaletteData[i]);
             }
+            writer.Align(4);
         }
     }
 
