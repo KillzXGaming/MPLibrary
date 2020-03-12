@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace MPLibrary.Switch.SMP
 {
@@ -10,7 +11,7 @@ namespace MPLibrary.Switch.SMP
     {
         public List<SpaceNode> Spaces = new List<SpaceNode>();
 
-        public MapParams(byte[] data)
+        public Board(byte[] data)
         {
             Spaces.Clear();
             using (var reader = new StreamReader(

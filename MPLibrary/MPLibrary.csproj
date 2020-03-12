@@ -53,34 +53,38 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Archive\MPBIN.cs" />
-    <Compile Include="HSF\HSFMaterialWrapper.cs" />
-    <Compile Include="HSF\HSFMesh.cs" />
-    <Compile Include="HSF\HSF_Parser.cs" />
-    <Compile Include="HSF\HSF_Renderer.cs" />
-    <Compile Include="HSF\HSF_Structs.cs" />
-    <Compile Include="HSF\Sections\Animation\HSFMotionAnimation.cs" />
-    <Compile Include="HSF\Sections\Animation\MotionDataSection.cs" />
-    <Compile Include="HSF\Sections\AttributeSection.cs" />
-    <Compile Include="HSF\Sections\CenvDataSection.cs" />
-    <Compile Include="HSF\Sections\FaceDataSection.cs" />
-    <Compile Include="HSF\Sections\FogSection.cs" />
-    <Compile Include="HSF\Sections\MaterialSection.cs" />
-    <Compile Include="HSF\Sections\MatrixDataSection.cs" />
-    <Compile Include="HSF\Sections\ObjectDataSection.cs" />
-    <Compile Include="HSF\Sections\SkeletonDataSection.cs" />
-    <Compile Include="HSF\Sections\SymbolDataSection.cs" />
-    <Compile Include="HSF\Sections\Texture\PaletteSection.cs" />
-    <Compile Include="HSF\Sections\Texture\TextureSection.cs" />
-    <Compile Include="HSF\Sections\Unused\ClusterDataSection.cs" />
-    <Compile Include="HSF\Sections\Unused\MapAttributeDataSection.cs" />
-    <Compile Include="HSF\Sections\Unused\PartDataSection.cs" />
-    <Compile Include="HSF\Sections\Unused\ShapeDataSection.cs" />
-    <Compile Include="HSF\Sections\Vertex\ColorSection.cs" />
-    <Compile Include="HSF\Sections\Vertex\NormalSection.cs" />
-    <Compile Include="HSF\Sections\Vertex\PositionSection.cs" />
-    <Compile Include="HSF\Sections\Vertex\TexCoordSection.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="GCWii\Archive\MPBIN.cs" />
+    <Compile Include="GCWii\Board.cs" />
+    <Compile Include="GCWii\HSF\HSFMaterialWrapper.cs" />
+    <Compile Include="GCWii\HSF\HSFMesh.cs" />
+    <Compile Include="GCWii\HSF\HSF_Parser.cs" />
+    <Compile Include="GCWii\HSF\HSF_Renderer.cs" />
+    <Compile Include="GCWii\HSF\HSF_Structs.cs" />
+    <Compile Include="GCWii\HSF\Sections\Animation\HSFMotionAnimation.cs" />
+    <Compile Include="GCWii\HSF\Sections\Animation\MotionDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\AttributeSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\CenvDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\FaceDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\FogSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\MaterialSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\MatrixDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\ObjectDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\SkeletonDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\SymbolDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Texture\PaletteSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Texture\TextureSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Unused\ClusterDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Unused\MapAttributeDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Unused\PartDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Unused\ShapeDataSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Vertex\ColorSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Vertex\NormalSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Vertex\PositionSection.cs" />
+    <Compile Include="GCWii\HSF\Sections\Vertex\TexCoordSection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Switch\SMP\Board.cs" />
+    <Compile Include="Switch\SMP\SpaceNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\STLibrary\STLibrary.csproj">
@@ -89,7 +93,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ATB\" />
+    <Folder Include="GCWii\ATB\" />
+    <Folder Include="WiiU\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

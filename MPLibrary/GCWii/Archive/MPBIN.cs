@@ -114,6 +114,7 @@ namespace FirstPlugin
                     switch (files[i].CompressionType)
                     {
                         case CompressionType.LZSS:
+
                             break;
                         case CompressionType.INFLATE:
                             savedBytes = STLibraryCompression.ZLIB.Compress(files[i].FileData);

@@ -380,7 +380,7 @@ namespace MPLibrary
         }
 
         //Adds a position component to the mesh
-        public void AddPositionComponent(int index, List<Vector3> positions)
+        internal void AddPositionComponent(int index, List<Vector3> positions)
         {
             for (int i = 0; i < Meshes.Count; i++) {
                 if (Meshes[i].ObjectData.VertexIndex == index)
@@ -389,7 +389,7 @@ namespace MPLibrary
         }
 
         //Adds a position component to the mesh
-        public void AddColorComponent(int index, List<Vector4> colors)
+        internal void AddColorComponent(int index, List<Vector4> colors)
         {
             for (int i = 0; i < Meshes.Count; i++) {
                 if (Meshes[i].ObjectData.ColorIndex == index)
@@ -398,7 +398,7 @@ namespace MPLibrary
         }
 
         //Adds a normal component to the mesh
-        public void AddNormalComponent(int index, List<Vector3> normals)
+        internal void AddNormalComponent(int index, List<Vector3> normals)
         {
             for (int i = 0; i < Meshes.Count; i++) {
                 if (Meshes[i].ObjectData.NormalIndex == index)
@@ -407,7 +407,7 @@ namespace MPLibrary
         }
 
         //Adds a UV component to the mesh
-        public void AddUVComponent(int index, List<Vector2> uvs)
+        internal void AddUVComponent(int index, List<Vector2> uvs)
         {
             for (int i = 0; i < Meshes.Count; i++)
             {
@@ -417,7 +417,7 @@ namespace MPLibrary
         }
 
         //Adds a primitive   component to the mesh
-        public void AddPrimitiveComponent(int index, List<PrimitiveObject> primitives)
+        internal void AddPrimitiveComponent(int index, List<PrimitiveObject> primitives)
         {
             for (int i = 0; i < Meshes.Count; i++)
             {
@@ -427,7 +427,7 @@ namespace MPLibrary
         }
 
         //Read the string from the string table given a relative offset
-        public string GetString(FileReader reader, uint offset) {
+        internal string GetString(FileReader reader, uint offset) {
             if (offset == uint.MaxValue)
                 return NullString;
 
@@ -437,7 +437,7 @@ namespace MPLibrary
             }
         }
 
-        public T ReadSection<T>(FileReader reader, HsfFile header) where T : HSFSection, new()
+        internal T ReadSection<T>(FileReader reader, HsfFile header) where T : HSFSection, new()
         {
             T instance = new T();
             instance.Offset = reader.ReadUInt32();
@@ -450,7 +450,7 @@ namespace MPLibrary
             return instance;
         }
 
-        public void SaveSectionHeader(FileWriter writer, uint count, HsfFile header)
+        internal void SaveSectionHeader(FileWriter writer, uint count, HsfFile header)
         {
             writer.Write(0);
             writer.Write(count);
