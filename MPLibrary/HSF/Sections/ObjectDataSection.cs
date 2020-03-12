@@ -107,6 +107,60 @@ namespace MPLibrary
                 writer.WriteStruct(obj);
             }
         }
+
+        public void WriteEffectPositions(FileWriter writer, HsfFile header)
+        {
+            List<EffectMesh> readMeshes = new List<EffectMesh>();
+
+            var ObjectsSorted = Objects.OrderBy(x => x.VertexIndex).ToList();
+
+            for (int i = 0; i < ObjectsSorted.Count; i++)
+            {
+                if (ObjectsSorted[i].VertexIndex >= 0)
+                {
+                    var effectMesh = Meshes[ObjectsSorted[i].VertexIndex];
+                    int index = Objects.IndexOf(ObjectsSorted[i]);
+                    if (!readMeshes.Contains(effectMesh))
+                    {
+                        writer.Align(0x20);
+                        Console.WriteLine($"Vert {ObjectsSorted[i].VertexIndex} {ObjectsSorted[i].PositionsOffset} {ObjectsSorted[i].NormalsOffset}");
+
+                        effectMesh.PositionOffset = (uint)writer.Position;
+                        for (int j = 0; j < effectMesh.Positions.Count; j++)
+                            writer.Write(effectMesh.Positions[j]);
+
+                        readMeshes.Add(effectMesh);
+                    }
+                    var obj = Objects[index];
+                    obj.PositionsOffset = (int)effectMesh.PositionOffset;
+                }
+            }
+        }
+
+        public void WriteEffectNormals(FileWriter writer, HsfFile header)
+        {
+            List<EffectMesh> readMeshes = new List<EffectMesh>();
+
+            for (int i = 0; i < Objects.Count; i++)
+            {
+                if (Objects[i].VertexIndex >= 0)
+                {
+                    var effectMesh = Meshes[Objects[i].VertexIndex];
+                    if (!readMeshes.Contains(effectMesh))
+                    {
+                        writer.Align(0x20);
+                        effectMesh.NormalOffset = (uint)writer.Position;
+                        for (int j = 0; j < effectMesh.Normals.Count; j++)
+                            writer.Write(effectMesh.Normals[j]);
+
+                        readMeshes.Add(effectMesh);
+                    }
+                    var obj = Objects[i];
+                    obj.NormalsOffset = (int)effectMesh.NormalOffset;
+                }
+            }
+        }
+
     }
 
 }

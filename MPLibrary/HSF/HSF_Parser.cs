@@ -103,6 +103,9 @@ namespace MPLibrary
 
         public List<Vector3> Positions = new List<Vector3>();
         public List<Vector3> Normals = new List<Vector3>();
+
+        internal uint PositionOffset;
+        internal uint NormalOffset;
     }
 
     public class RiggingInfo
@@ -305,10 +308,16 @@ namespace MPLibrary
             if (numUsedPositions > 0) {
                 PositionData.Write(writer, this);
             }
+
+            ObjectData.WriteEffectPositions(writer, this);
+
             writer.WriteUint32Offset(48);
             if (numUsedNormals > 0) {
                 NormalData.Write(writer, this);
             }
+
+            ObjectData.WriteEffectNormals(writer, this);
+
             writer.WriteUint32Offset(56);
             if (numUsedTexCoords > 0) {
                 TexCoordData.Write(writer, this);
