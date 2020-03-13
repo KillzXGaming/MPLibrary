@@ -67,15 +67,16 @@ namespace MPLibrary
         {
             Objects = reader.ReadMultipleStructs<ObjectData>(this.Count);
             for (int i = 0; i < Objects.Count; i++)
-            {
                 ObjectNames.Add(header.GetString(reader, Objects[i].StringOffset));
-            }
+        }
 
+        internal void ReadEffectMeshes(FileReader reader, HsfFile header)
+        {
             //Read additional custom effect meshes
             List<uint> readMeshes = new List<uint>();
             for (int i = 0; i < Objects.Count; i++)
             {
-                if (Objects[i].PositionsOffset == 0 || Objects[i].VertexIndex < 0 || 
+                if (Objects[i].PositionsOffset == 0 || Objects[i].VertexIndex < 0 ||
                     readMeshes.Contains((uint)Objects[i].PositionsOffset))
                     continue;
 

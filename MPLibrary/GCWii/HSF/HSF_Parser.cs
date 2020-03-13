@@ -163,6 +163,8 @@ namespace MPLibrary
             SymbolData = ReadSection<SymbolDataSection>(reader, this);
             reader.ReadUInt32(); //StringTableOffset
             reader.ReadUInt32(); //StringTableSize
+
+            ObjectData.ReadEffectMeshes(reader, this);
         }
 
         private Dictionary<string, int> savedStrings;

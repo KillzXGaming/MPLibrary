@@ -44,6 +44,19 @@ namespace MPLibrary
 
     public enum TrackEffect : short
     {
+        TranslateX = 8,
+        TranslateY = 9,
+        TranslateZ = 10,
+        RotationX = 28,
+        RotationY = 29,
+        RotationZ = 30,
+        ScaleX = 31,
+        ScaleY = 32,
+        ScaleZ = 33,
+    }
+
+    public enum MaterialTrackEffect : short
+    {
         LitAmbientColorR = 0,
         LitAmbientColorG = 1,
         LitAmbientColorB = 2,
@@ -73,6 +86,37 @@ namespace MPLibrary
         MatUnknown5 = 61,
     }
 
+
+    public enum AttributeTrackEffect : short
+    {
+        LitAmbientColorR = 0,
+        LitAmbientColorG = 1,
+        LitAmbientColorB = 2,
+
+        TranslateX = 8,
+        TranslateY = 9,
+        TranslateZ = 10,
+        RotationX = 28,
+        RotationY = 29,
+        RotationZ = 30,
+        ScaleX = 31,
+        ScaleY = 32,
+        ScaleZ = 33,
+
+        AmbientColorR = 49,
+        AmbientColorG = 50,
+        AmbientColorB = 51,
+        ShadowColorR = 52,
+        ShadowColorG = 53,
+        ShadowColorB = 54,
+        HiliteScale = 55,
+        Unknown = 56,
+        Transparency = 57,
+        MatUnknown3 = 58,
+        MatUnknown4 = 59,
+        ReflectionBrightness = 60,
+        MatUnknown5 = 61,
+    }
     public enum InterpolationMode : short
     {
         Step = 0,
@@ -127,7 +171,7 @@ namespace MPLibrary
                     else
                         track.Constant = reader.ReadSingle();
 
-                   // Console.WriteLine($"{j} TrackMode {track.mode} effect {track.effect} interp {track.interpolate_type} Constant {track.Constant}");
+                    Console.WriteLine($"{j} TrackMode {track.mode} valueIndex {track.valueIndex} effect {track.effect} interp {track.interpolate_type} Constant {track.Constant}");
 
                     if (track.valueIndex != 0)
                     {
