@@ -31,11 +31,21 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK">
       <HintPath>..\STLibrary\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="OpenTK.GLControl">
       <HintPath>..\STLibrary\OpenTK.GLControl.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpYaml">
+      <HintPath>.\SharpYaml.dll</HintPath>
+    </Reference>
+    <Reference Include="STLibrary">
+      <HintPath>.\STLibrary.dll</HintPath>
     </Reference>
     <Reference Include="Syroot.BinaryData">
       <HintPath>..\STLibrary\Syroot.BinaryData.dll</HintPath>
@@ -53,11 +63,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DS\HSDF\Animations\Animation.cs" />
+    <Compile Include="DS\HSDF\HsdfFile.cs" />
+    <Compile Include="DS\ISection.cs" />
+    <Compile Include="DS\LZ77.cs" />
+    <Compile Include="DS\HSDF\Model\EnvelopeBlock.cs" />
+    <Compile Include="DS\HSDF\Model\MaterialBlock.cs" />
+    <Compile Include="DS\HSDF\Model\MaterialData.cs" />
+    <Compile Include="DS\HSDF\Model\MeshBlock.cs" />
+    <Compile Include="DS\HSDF\Model\ModelBlock.cs" />
+    <Compile Include="DS\HSDF\Model\MatrixBlock.cs" />
+    <Compile Include="DS\HSDF\Model\ObjectBlock.cs" />
+    <Compile Include="DS\HSDF\Model\SkinningBlock.cs" />
+    <Compile Include="DS\HSDF\Model\StringTable.cs" />
+    <Compile Include="DS\HSDF\Model\AttributeBlock.cs" />
+    <Compile Include="DS\NitroGX.cs" />
+    <Compile Include="DS\NitroTex.cs" />
+    <Compile Include="DS\ReaderExtensions.cs" />
+    <Compile Include="DS\HSDF\Texture\ImageBlock.cs" />
+    <Compile Include="DS\HSDF\Texture\NameBlock.cs" />
+    <Compile Include="DS\HSDF\Texture\PaletteDataBlock.cs" />
+    <Compile Include="DS\HSDF\Texture\TextureBlock.cs" />
+    <Compile Include="DS\HSDF\Texture\TextureMapperBlock.cs" />
+    <Compile Include="DS\TriangleHelper.cs" />
     <Compile Include="Game.cs" />
-    <Compile Include="GCWii\Archive\MPBIN.cs" />
     <Compile Include="GCWii\Board.cs" />
-    <Compile Include="GCWii\HSF\HSFMaterialWrapper.cs" />
-    <Compile Include="GCWii\HSF\HSFMesh.cs" />
+    <Compile Include="GCWii\HSF\HSF_AnimationConverter.cs" />
+    <Compile Include="GCWii\HSF\HSF_MaterialConverter.cs" />
+    <Compile Include="GCWii\HSF\HSF_ModelImporter.cs" />
     <Compile Include="GCWii\HSF\HSF_Parser.cs" />
     <Compile Include="GCWii\HSF\HSF_Renderer.cs" />
     <Compile Include="GCWii\HSF\HSF_Structs.cs" />
@@ -85,16 +118,26 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Switch\SMP\Board.cs" />
     <Compile Include="Switch\SMP\SpaceNode.cs" />
+    <Compile Include="WiiU\BinaryXML.cs" />
+    <Compile Include="WiiU\BNFM\Animation\BNFMSA.cs" />
+    <Compile Include="WiiU\BNFM\Animation\BNFM_SkeletalAnimation.cs" />
+    <Compile Include="WiiU\BNFM\BNFIM_Parse.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_Attribute.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_Bone.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_AttributeList.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_Material.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_MaterialMapper.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_Mesh.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_TextureSlot.cs" />
+    <Compile Include="WiiU\BNFM\BNFM_Vertex.cs" />
+    <Compile Include="WiiU\Board.cs" />
+    <Compile Include="WiiU\PAC.cs" />
+    <Compile Include="Wii\BRES.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\STLibrary\STLibrary.csproj">
-      <Project>{7d292e2f-1dbe-4da0-a63b-4b8259fad0dd}</Project>
-      <Name>STLibrary</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <Folder Include="3DS\" />
+    <Folder Include="GCWii\Archive\" />
     <Folder Include="GCWii\ATB\" />
-    <Folder Include="WiiU\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

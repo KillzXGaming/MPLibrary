@@ -3,22 +3,24 @@ using System.Linq;
 using System.Collections.Generic;
 using Toolbox.Library.Animations;
 using System.Runtime.InteropServices;
-using Toolbox.Library;
+using STLibrary;
 using OpenTK;
 
 namespace MPLibrary
 {
     public class HSFMotionAnimation : STAnimation
     {
+        public EventHandler AnimationNextFrame;
+
         public List<TrackData> trackInfo = new List<TrackData>();
 
         public uint GetTrackCount()
         {
-            int numTracks = 0;
-            foreach (var group in AnimGroups)
-                numTracks += group.GetTracks().Count;
+            uint numTracks = 0;
+            foreach (AnimationNode group in AnimGroups)
+                numTracks += (uint)group.TrackList.Count;
 
-            return (uint)trackInfo.Count;
+            return numTracks;
         }
 
         public List<AnimTrack> GetAllTracks()
@@ -38,6 +40,8 @@ namespace MPLibrary
         public override void NextFrame()
         {
             if (Frame > FrameCount) return;
+
+            AnimationNextFrame?.Invoke(this, EventArgs.Empty);
 
             var skeleton = GetActiveSkeleton();
             if (skeleton == null) return;
@@ -116,9 +120,11 @@ namespace MPLibrary
         public AnimTrack ScaleY => FindByEffect(TrackEffect.ScaleY);
         public AnimTrack ScaleZ => FindByEffect(TrackEffect.ScaleZ);
 
+        public TrackMode Mode = TrackMode.Normal;
+
         public List<AnimTrack> TrackList = new List<AnimTrack>();
 
-        public float ValueIndex { get; set; }
+        public short ValueIndex { get; set; }
 
         public bool IsBone
         {
@@ -168,6 +174,9 @@ namespace MPLibrary
 
         public override float GetFrameValue(float frame, float startFrame = 0)
         {
+            if (InterpolationType == STInterpoaltionType.Constant)
+                return Constant;
+             
             if (KeyFrames.Count == 0) return 0;
             if (KeyFrames.Count == 1) return KeyFrames[0].Value;
 
@@ -192,19 +201,38 @@ namespace MPLibrary
                     case STInterpoaltionType.Constant: return LK.Value;
                     case STInterpoaltionType.Step: return LK.Value;
                     case STInterpoaltionType.Linear: return InterpolationHelper.Lerp(LK.Value, RK.Value, Weight);
+                    case STInterpoaltionType.Bezier:
+                        {
+                            return InterpolationHelper.Lerp(LK.Value, RK.Value, Weight);
+
+                            STBezierKeyFrame bezierKeyLK = (STBezierKeyFrame)LK;
+                            STBezierKeyFrame bezierKeyRK = (STBezierKeyFrame)RK;
+
+                            float length = RK.Frame - LK.Frame;
+
+                            return InterpolationHelper.BezierInterpolate(frame,
+                             bezierKeyLK.Frame,
+                             bezierKeyRK.Frame,
+                             bezierKeyLK.SlopeIn,
+                             bezierKeyRK.SlopeOut,
+                             bezierKeyLK.Value,
+                             bezierKeyRK.Value);
+                        }
                     case STInterpoaltionType.Hermite:
-                        STHermiteKeyFrame hermiteKeyLK = (STHermiteKeyFrame)LK;
-                        STHermiteKeyFrame hermiteKeyRK = (STHermiteKeyFrame)RK;
+                        {
+                            STHermiteKeyFrame hermiteKeyLK = (STHermiteKeyFrame)LK;
+                            STHermiteKeyFrame hermiteKeyRK = (STHermiteKeyFrame)RK;
 
-                        float length = RK.Frame - LK.Frame;
+                            float length = RK.Frame - LK.Frame;
 
-                        return InterpolationHelper.HermiteInterpolate(frame,
-                         hermiteKeyLK.Frame,
-                         hermiteKeyRK.Frame,
-                         hermiteKeyLK.TangentIn,
-                         hermiteKeyLK.TangentOut,
-                         hermiteKeyLK.Value,
-                         hermiteKeyRK.Value);
+                            return InterpolationHelper.HermiteInterpolate(frame,
+                             hermiteKeyLK.Frame,
+                             hermiteKeyRK.Frame,
+                             hermiteKeyLK.TangentIn,
+                             hermiteKeyLK.TangentOut,
+                             hermiteKeyLK.Value,
+                             hermiteKeyRK.Value);
+                        }
                 }
             }
 

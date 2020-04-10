@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
-using Toolbox.Library;
+using STLibrary;
 
 namespace MPLibrary
 {
@@ -27,45 +27,41 @@ namespace MPLibrary
 
     public class TextureSection : HSFSection
     {
-        public List<TextureInfo> Textures = new List<TextureInfo>();
-        public List<byte[]> ImageData = new List<byte[]>();
-        public List<string> TextureNames = new List<string>();
-
         public override void Read(FileReader reader, HsfFile header) {
-            Textures = reader.ReadMultipleStructs<TextureInfo>(this.Count);
+            var textures = reader.ReadMultipleStructs<TextureInfo>(this.Count);
             long pos = reader.Position;
-            for (int i = 0; i < Textures.Count; i++)
+            for (int i = 0; i < textures.Count; i++)
             {
-                TextureNames.Add(header.GetString(reader, Textures[i].NameOffset));
+                string name = header.GetString(reader, textures[i].NameOffset);
 
-                reader.SeekBegin(pos + Textures[i].DataOffset);
-                var format = FormatList[Textures[i].Format];
+                reader.SeekBegin(pos + textures[i].DataOffset);
+                var format = FormatList[textures[i].Format];
                 if (format == Decode_Gamecube.TextureFormats.C8)
                 {
-                    if (Textures[i].Bpp == 4)
+                    if (textures[i].Bpp == 4)
                         format = Decode_Gamecube.TextureFormats.C4;
                 }
-                var size = Decode_Gamecube.GetDataSize(format, Textures[i].Width, Textures[i].Height, false);
+                var size = Decode_Gamecube.GetDataSize(format, textures[i].Width, textures[i].Height, false);
                 var data = reader.ReadBytes(size);
-                ImageData.Add(data);
+                header.AddTexture(name, textures[i], data);
             }
         }
 
         public override void Write(FileWriter writer, HsfFile header) {
             long texpos = writer.Position;
-            for (int i = 0; i < Textures.Count; i++)
+            for (int i = 0; i < header.Textures.Count; i++)
             {
-                var tex = Textures[i];
-                tex.NameOffset = (uint)header.GetStringOffset(TextureNames[i]);
+                var tex = header.Textures[i].TextureInfo;
+                tex.NameOffset = (uint)header.GetStringOffset(header.Textures[i].Name);
                 writer.WriteStruct(tex);
             }
 
             long datapos = writer.Position;
-            for (int i = 0; i < Textures.Count; i++)
+            for (int i = 0; i < header.Textures.Count; i++)
             {
                 writer.Align(0x20);
                 writer.WriteUint32Offset(texpos + 28 + (i * 32), datapos);
-                writer.Write(ImageData[i]);
+                writer.Write(header.Textures[i].ImageData);
             }
             writer.Align(8);
         }

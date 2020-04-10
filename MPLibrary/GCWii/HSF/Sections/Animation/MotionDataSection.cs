@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using Toolbox.Library.Animations;
 using System.Runtime.InteropServices;
-using Toolbox.Library;
+using STLibrary;
 using OpenTK;
 
 namespace MPLibrary
@@ -89,10 +89,7 @@ namespace MPLibrary
 
     public enum AttributeTrackEffect : short
     {
-        LitAmbientColorR = 0,
-        LitAmbientColorG = 1,
-        LitAmbientColorB = 2,
-
+        //Used for texture SRT
         TranslateX = 8,
         TranslateY = 9,
         TranslateZ = 10,
@@ -102,20 +99,6 @@ namespace MPLibrary
         ScaleX = 31,
         ScaleY = 32,
         ScaleZ = 33,
-
-        AmbientColorR = 49,
-        AmbientColorG = 50,
-        AmbientColorB = 51,
-        ShadowColorR = 52,
-        ShadowColorG = 53,
-        ShadowColorB = 54,
-        HiliteScale = 55,
-        Unknown = 56,
-        Transparency = 57,
-        MatUnknown3 = 58,
-        MatUnknown4 = 59,
-        ReflectionBrightness = 60,
-        MatUnknown5 = 61,
     }
     public enum InterpolationMode : short
     {
@@ -202,6 +185,7 @@ namespace MPLibrary
                         animationNodes.Add(name, new AnimationNode() 
                         {
                             Name = name,
+                            Mode = track.mode,
                             ValueIndex = track.valueIndex,
                         });
 
@@ -238,18 +222,18 @@ namespace MPLibrary
                                 //16 bytes
                                 case InterpolationMode.Bezier:
                                     {
-                                        keyFrames.Add(new STHermiteKeyFrame()
+                                        keyFrames.Add(new STBezierKeyFrame()
                                         {
                                             Frame = reader.ReadSingle(),
                                             Value = reader.ReadSingle(),
-                                            TangentIn = reader.ReadSingle(),
-                                            TangentOut = reader.ReadSingle(),
+                                            SlopeIn = reader.ReadSingle(),
+                                            SlopeOut = reader.ReadSingle(),
                                         });
                                     }
                                     break;
                                 case InterpolationMode.Linear:
                                     {
-                                        keyFrames.Add(new STBezierKeyFrame()
+                                        keyFrames.Add(new STKeyFrame()
                                         {
                                             Frame = reader.ReadSingle(),
                                             Value = reader.ReadSingle(),
@@ -285,7 +269,7 @@ namespace MPLibrary
             switch (mode)
             {
                 case InterpolationMode.Linear: return STInterpoaltionType.Linear;
-                case InterpolationMode.Bezier: return STInterpoaltionType.Hermite;
+                case InterpolationMode.Bezier: return STInterpoaltionType.Bezier;
                 case InterpolationMode.Step: return STInterpoaltionType.Step;
                 case InterpolationMode.Constant: return STInterpoaltionType.Constant;
                 case InterpolationMode.Bitmap: return STInterpoaltionType.Bitmap;
@@ -298,7 +282,7 @@ namespace MPLibrary
             switch (mode)
             {
                 case STInterpoaltionType.Linear: return InterpolationMode.Linear;
-                case STInterpoaltionType.Hermite: return InterpolationMode.Bezier;
+                case STInterpoaltionType.Bezier: return InterpolationMode.Bezier;
                 case STInterpoaltionType.Step: return InterpolationMode.Step;
                 case STInterpoaltionType.Constant: return InterpolationMode.Constant;
                 case STInterpoaltionType.Bitmap: return InterpolationMode.Bitmap;
@@ -398,12 +382,12 @@ namespace MPLibrary
                                     }
                                     break;
                                 //16 bytes
-                                case STInterpoaltionType.Hermite:
+                                case STInterpoaltionType.Bezier:
                                     {
                                         writer.Write(keyFrame.Frame);
                                         writer.Write(keyFrame.Value);
-                                        writer.Write(((STHermiteKeyFrame)keyFrame).TangentIn);
-                                        writer.Write(((STHermiteKeyFrame)keyFrame).TangentOut);
+                                        writer.Write(((STBezierKeyFrame)keyFrame).SlopeIn);
+                                        writer.Write(((STBezierKeyFrame)keyFrame).SlopeOut);
                                     }
                                     break;
                                 default:

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
@@ -13,6 +13,8 @@ namespace MPLibrary
     {
         public PrimitiveType Type;
         public int MaterialIndex;
+
+        public int FlagValue = 8;
 
         public VertexGroup[] Vertices;
 
@@ -33,7 +35,6 @@ namespace MPLibrary
             var ExtOffset = pos;
             foreach (var att in Components)
                 ExtOffset += att.DataCount * 48;
-
             foreach (var comp in Components) {
                 List<PrimitiveObject> primatives = new List<PrimitiveObject>();
                 reader.SeekBegin(pos + comp.DataOffset);
@@ -43,7 +44,8 @@ namespace MPLibrary
 
                     prim.Type = (PrimitiveType)reader.ReadUInt16();
                     prim.Flags = reader.ReadUInt16();
-                    prim.MaterialIndex = prim.Flags & 0xFF;
+                    prim.MaterialIndex = prim.Flags & 0xFFF;
+                    prim.FlagValue = prim.Flags >> 12;
 
                     int primCount = 3;
                     if (prim.Type == PrimitiveType.Triangle || prim.Type == PrimitiveType.Quad)
@@ -102,7 +104,10 @@ namespace MPLibrary
                 foreach (var primitive in mesh.Primitives)
                 {
                     writer.Write((ushort)primitive.Type);
-                    writer.Write((ushort)primitive.Flags);
+                    primitive.Flags = (ushort)(primitive.MaterialIndex);
+                    primitive.Flags |= (ushort)(primitive.FlagValue << 12);
+
+                    writer.Write(primitive.Flags);
 
                     int primCount = 3;
                     if (primitive.Type == PrimitiveType.Triangle || primitive.Type == PrimitiveType.Quad)

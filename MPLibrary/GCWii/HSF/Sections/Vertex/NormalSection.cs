@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using OpenTK;
 
 namespace MPLibrary
@@ -43,10 +43,10 @@ namespace MPLibrary
                 for (int i = 0; i < comp.DataCount; i++)
                 {
                     if (TypeFlag == DataType.Sbyte)
-                        normals.Add(new Vector3
-                            (reader.ReadSByte(), 
-                             reader.ReadSByte(),
-                             reader.ReadSByte()));
+                        normals.Add(new Vector3(
+                            reader.ReadSByte() / (float)sbyte.MaxValue, 
+                            reader.ReadSByte() / (float)sbyte.MaxValue,
+                            reader.ReadSByte() / (float)sbyte.MaxValue));
                     else
                         normals.Add(new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
                 }
@@ -66,18 +66,23 @@ namespace MPLibrary
                 writer.Write(uint.MaxValue);
             }
 
+            if (meshes.Count == 1)
+                TypeFlag = DataType.Sbyte;
+
             long dataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++)
             {
+                meshes[i].ObjectData.NormalIndex = i;
+
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
                 for (int j = 0; j < meshes[i].Normals.Count; j++)
                 {
                     if (TypeFlag == DataType.Sbyte)
                     {
-                        writer.Write((sbyte)(meshes[i].Normals[j].X));
-                        writer.Write((sbyte)(meshes[i].Normals[j].Y));
-                        writer.Write((sbyte)(meshes[i].Normals[j].Z));
+                        writer.Write((sbyte)(meshes[i].Normals[j].X * sbyte.MaxValue));
+                        writer.Write((sbyte)(meshes[i].Normals[j].Y * sbyte.MaxValue));
+                        writer.Write((sbyte)(meshes[i].Normals[j].Z * sbyte.MaxValue));
                     }
                     else
                         writer.Write(meshes[i].Normals[j]);

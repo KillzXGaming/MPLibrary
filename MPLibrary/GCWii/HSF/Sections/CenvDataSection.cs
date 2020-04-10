@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 
 namespace MPLibrary
@@ -76,6 +76,7 @@ namespace MPLibrary
             var rigs = reader.ReadMultipleStructs<RiggeObject>(this.Count);
             long pos = reader.Position;
 
+            List<RiggingInfo> infos = new List<RiggingInfo>();
             for (int i = 0; i < rigs.Count; i++)
             {
                 reader.SeekBegin(pos + rigs[i].SingleBindOffset);
@@ -87,7 +88,7 @@ namespace MPLibrary
                 reader.SeekBegin(pos + rigs[i].MultiBindOffset);
                 var multiBinds = reader.ReadMultipleStructs<RiggingMultiBind>(rigs[i].MultiBindCount);
 
-                header.Meshes[i].RiggingInfo = new RiggingInfo()
+                infos.Add(new RiggingInfo()
                 {
                     Unknown = rigs[i].Unknown,
                     SingleBinds = singleBinds,
@@ -95,7 +96,13 @@ namespace MPLibrary
                     MultiBinds = multiBinds,
                     VertexCount = rigs[i].VertexCount,
                     SingleBind = rigs[i].SingleBind,
-                };
+                });
+            }
+
+            foreach (var mesh in header.Meshes)
+            {
+                if (mesh.ObjectData.CenvIndex != -1)
+                    mesh.RiggingInfo = infos[mesh.ObjectData.CenvIndex];
             }
 
             var weightStart = reader.Position;
@@ -149,10 +156,13 @@ namespace MPLibrary
             var doubleBindWeightsOffset = bindWeightPosition;
             var multiBindWeightsOffset = bindWeightPosition + doubleBindWeightSize;
 
-            int doubleWeightIndex = 0;
             long indexDataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++)
             {
+                meshes[i].ObjectData.CenvIndex = i;
+
+                int doubleWeightIndex = 0;
+
                 var mesh = meshes[i];
                 if (mesh.RiggingInfo.SingleBinds.Count > 0) {
                     writer.WriteUint32Offset(startPos + 4 + (i * 36), indexDataPos);

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using OpenTK;
 
 namespace MPLibrary
@@ -41,6 +41,8 @@ namespace MPLibrary
 
             long dataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++) {
+                meshes[i].ObjectData.VertexIndex = i;
+
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
                 for (int j = 0; j < meshes[i].Positions.Count; j++)

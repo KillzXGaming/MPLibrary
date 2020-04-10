@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
@@ -38,6 +38,16 @@ namespace MPLibrary
         }
     }
 
+    public class Material
+    {
+        public string Name { get; set; }
+        public int ID { get; set; }
+
+        public MaterialObject MaterialData { get; set; }
+
+        public List<Tuple<string, AttributeData>> Textures = new List<Tuple<string, AttributeData>>();
+    }
+
     public class EffectMesh
     {
         public string Name { get; set; }
@@ -63,27 +73,65 @@ namespace MPLibrary
         public uint SingleBind;
     }
 
+    public class HSFTexture
+    {
+        public string Name { get; set; }
+        public TextureInfo TextureInfo { get; set; }
+        public byte[] ImageData { get; set; }
+
+        public PaletteInfo PaletteInfo;
+        public byte[] PaletteData;
+
+        public HSFTexture()
+        {
+
+        }
+
+        public static int GetFormatId(STLibrary.Decode_Gamecube.TextureFormats format)
+        {
+            return TextureSection.FormatList.FirstOrDefault(x => x.Value == format).Key;
+        }
+
+        public bool HasPaletteData()
+        {
+            return PaletteData != null && PaletteData.Length > 0;
+        }
+
+        public HSFTexture(string name, TextureInfo info, byte[] imageData)
+        {
+            Name = name;
+            TextureInfo = info;
+            ImageData = imageData;
+        }
+    }
+
     //Parser based on https://github.com/Ploaj/Metanoia/blob/master/Metanoia/Formats/GameCube/HSF.cs
     public class HsfFile
     {
         internal static string NullString => "<0>";
 
         public FogSection FogData = new FogSection();
-        public ColorSection ColorData = new ColorSection();
-        public MaterialSection MaterialData = new MaterialSection();
+
         public AttributeSection AttributeData = new AttributeSection();
-        public PositionSection PositionData = new PositionSection();
-        public NormalSection NormalData = new NormalSection();
-        public TexCoordSection TexCoordData = new TexCoordSection();
-        public FaceDataSection FaceData = new FaceDataSection();
+
         public ObjectDataSection ObjectData = new ObjectDataSection();
 
-        public TextureSection TextureData = new TextureSection();
-        public PaletteSection PaletteData = new PaletteSection();
+        internal TextureSection TextureData = new TextureSection();
+        internal PaletteSection PaletteData = new PaletteSection();
 
         public MotionDataSection MotionData = new MotionDataSection();
         public CenvDataSection CenvData = new CenvDataSection();
         public SkeletonDataSection SkeletonData = new SkeletonDataSection();
+
+        internal MaterialSection MaterialData = new MaterialSection();
+
+        internal ColorSection ColorData = new ColorSection();
+        internal PositionSection PositionData = new PositionSection();
+        internal NormalSection NormalData = new NormalSection();
+        internal TexCoordSection TexCoordData = new TexCoordSection();
+        internal FaceDataSection FaceData = new FaceDataSection();
+
+        public List<ObjectDataNode> ObjectRoots = new List<ObjectDataNode>();
 
         public PartDataSection PartData = new PartDataSection();
         public ClusterDataSection ClusterData = new ClusterDataSection();
@@ -93,22 +141,29 @@ namespace MPLibrary
         public MatrixDataSection MatrixData = new MatrixDataSection();
         public SymbolDataSection SymbolData = new SymbolDataSection();
 
-        public string Version { get; set; }
+        public Dictionary<int, MatAnimController> MatAnimControllers = new Dictionary<int, MatAnimController>();
+        public Dictionary<int, AttributeAnimController> AttributeAnimControllers = new Dictionary<int, AttributeAnimController>();
+
+        public string Version { get; set; } = "V037";
 
         internal uint StringTableOffset = 0;
         internal uint StringTableSize = 0;
 
         public List<Mesh> Meshes = new List<Mesh>();
+        public List<Material> Materials = new List<Material>();
+        public List<HSFTexture> Textures = new List<HSFTexture>();
 
-        public int TextureCount => TextureData.Textures.Count;
+        public int TextureCount => Textures.Count;
 
         public int ObjectCount => ObjectData.Objects.Count;
+
+        public HsfFile() { }
 
         public HsfFile(string fileName) {
             Read(new FileReader(fileName));
         }
 
-        private HsfFile(System.IO.Stream stream) {
+        public HsfFile(System.IO.Stream stream) {
             Read(new FileReader(stream));
         }
 
@@ -164,7 +219,68 @@ namespace MPLibrary
             reader.ReadUInt32(); //StringTableOffset
             reader.ReadUInt32(); //StringTableSize
 
+     /*       List<ObjectDataNode> objects = new List<ObjectDataNode>();
+            foreach (var obj in ObjectData.Objects)
+                objects.Add(new ObjectDataNode(obj));
+
+            foreach (var obj in objects)
+            {
+                var data = obj.ObjectData;
+                var symbol = data.SymbolIndex;
+                for (int i = 0; i < data.ChildrenCount; i++)
+                    obj.Children.Add(objects[SymbolData.SymbolIndices[symbol++]]);
+
+                if (data.ParentIndex != -1) {
+                    obj.Parent = objects[(int)data.ParentIndex];
+                }
+            }
+
+            foreach (var obj in objects) {
+                if (obj.Parent == null)
+                    ObjectRoots.Add(obj);
+            }
+
+            objects.Clear();*/
+
+            foreach (var material in Materials)
+            {
+                var matData = material.MaterialData;
+                if (matData.TextureCount > 0)
+                {
+                    var symbol = matData.FirstSymbol;
+                    for (int i = 0; i < matData.TextureCount; i++)
+                    {
+                        var index = SymbolData.SymbolIndices[symbol++];
+                        var name = AttributeData.AttributeNames[index];
+                        material.Textures.Add(Tuple.Create(name, AttributeData.Attributes[index]));
+                    }
+                }
+            }
+
             ObjectData.ReadEffectMeshes(reader, this);
+        }
+
+        internal void AddTexture(string name, TextureInfo info, byte[] imageData) {
+            Textures.Add(new HSFTexture(name, info, imageData));
+        }
+
+        internal void AddPalette(List<PaletteInfo> paletteInfos, List<byte[]> paletteDatas) {
+            for (int i = 0; i < Textures.Count; i++)
+            {
+                var info = Textures[i].TextureInfo;
+                var index = info.PaletteIndex; 
+                if (index != -1) {
+                    Textures[i].PaletteInfo = paletteInfos[index];
+                    Textures[i].PaletteData = paletteDatas[index];
+                }
+            }
+        }
+
+        internal void AddMaterial(MaterialObject mat, string name) {
+            Materials.Add(new Material() {
+                MaterialData = mat,
+                ID = Materials.Count,
+                Name = name });
         }
 
         private Dictionary<string, int> savedStrings;
@@ -184,21 +300,80 @@ namespace MPLibrary
         }
 
         public void Save(string fileName) {
-            Write(new FileWriter(fileName));
+            using (var writer = new FileWriter(fileName)) {
+                Write(writer);
+            }
         }
 
-        public void Save(System.IO.Stream stream) {
-            Write(new FileWriter(stream));
+        public void Save(System.IO.Stream stream, bool keepOpen = false) {
+            using (var writer = new FileWriter(stream, keepOpen)) {
+                Write(writer);
+            }
+        }
+
+        //Regenerates symbols used by attributes and objects
+        private void GenerateSymbolTable()
+        {
+            List<int> symbols = new List<int>();
+           /* for (int i = 0; i < AttributeData.Attributes.Count; i++)
+            {
+                symbols.Add(i);
+            }
+            */
+
+            for (int i = 0; i < Materials.Count; i++)
+            {
+                var data = Materials[i].MaterialData;
+
+                data.FirstSymbol = symbols.Count;
+                foreach (var att in Materials[i].Textures)
+                {
+                    var index = AttributeData.Attributes.IndexOf(att.Item2);
+                    if (!symbols.Contains(index))
+                        symbols.Add(index);
+                }
+                data.TextureCount = Materials[i].Textures.Count;
+            }
+            Console.WriteLine($"ATT symbols {symbols.Count}");
+
+            symbols.AddRange(ObjectData.GenerateSymbols(symbols.Count - 1));
+            Console.WriteLine($"symbols {symbols.Count}");
+
+            SymbolData.SymbolIndices = symbols.ToArray();
+        }
+
+        //Saves and applies all the attributes used for meshes 
+        private void SaveMeshAttributes()
+        {
+            List<AttributeData> attributes = new List<AttributeData>();
+            List<string> attributeNames = new List<string>();
+            for (int i = 0; i < Materials.Count; i++)
+            {
+                foreach (var tex in Materials[i].Textures)
+                {
+                    if (!attributes.Contains(tex.Item2))
+                    {
+                        attributeNames.Add(tex.Item1);
+                        attributes.Add(tex.Item2);
+                    }
+                }
+            }
+
+            AttributeData.Attributes = attributes;
+            AttributeData.AttributeNames = attributeNames;
         }
 
         private void Write(FileWriter writer)
         {
+            SaveMeshAttributes();
+
             writer.SetByteOrder(true);
             writer.WriteSignature("HSF");
             writer.WriteSignature(Version);
             writer.Seek(1);
 
             savedStrings = SaveStrings();
+            GenerateSymbolTable();
 
             var numUsedPositions = 0;
             var numUsedColors = 0;
@@ -206,26 +381,32 @@ namespace MPLibrary
             var numUsedNormals =0;
             var numUsedPrimitives = 0;
             var numUsedRigs = 0;
+            var numFaces = 0;
             foreach (var mesh in Meshes) {
+                mesh.ObjectData.FaceIndex = numFaces;
+                if (mesh.Colors.Count > 0)
+                    mesh.ObjectData.ColorIndex = numUsedColors;
+
                 if (mesh.Positions.Count > 0) numUsedPositions++;
                 if (mesh.Normals.Count > 0) numUsedNormals++;
                 if (mesh.TexCoords.Count > 0) numUsedTexCoords++;
                 if (mesh.Colors.Count > 0) numUsedColors++;
                 if (mesh.Primitives.Count > 0) numUsedPrimitives++;
                 if (mesh.HasRigging) numUsedRigs++;
-            }
 
+                numFaces++;
+            }
             SaveSectionHeader(writer, (uint)FogData.Count, this);
             SaveSectionHeader(writer, (uint)numUsedColors, this);
-            SaveSectionHeader(writer, (uint)MaterialData.Materials.Count, this);
+            SaveSectionHeader(writer, (uint)Materials.Count, this);
             SaveSectionHeader(writer, (uint)AttributeData.Attributes.Count, this);
             SaveSectionHeader(writer, (uint)numUsedPositions, this);
             SaveSectionHeader(writer, (uint)numUsedNormals, this);
             SaveSectionHeader(writer, (uint)numUsedTexCoords, this);
             SaveSectionHeader(writer, (uint)numUsedPrimitives, this);
             SaveSectionHeader(writer, (uint)ObjectData.Objects.Count, this);
-            SaveSectionHeader(writer, (uint)TextureData.Textures.Count, this);
-            SaveSectionHeader(writer, (uint)PaletteData.Palettes.Count, this);
+            SaveSectionHeader(writer, (uint)Textures.Count, this);
+            SaveSectionHeader(writer, (uint)PaletteData.PaletteData.Count, this);
             SaveSectionHeader(writer, (uint)MotionData.Animations.Count, this);
             SaveSectionHeader(writer, (uint)CenvData.Count, this);
             SaveSectionHeader(writer, (uint)SkeletonData.Count, this);
@@ -234,7 +415,7 @@ namespace MPLibrary
             SaveSectionHeader(writer, (uint)ShapeData.Count, this);
             SaveSectionHeader(writer, (uint)MapAttributeData.Count, this);
             SaveSectionHeader(writer, (uint)MatrixData.Count, this);
-            SaveSectionHeader(writer, (uint)SymbolData.Count, this);
+            SaveSectionHeader(writer, (uint)SymbolData.SymbolIndices.Length, this);
             long _stringTableOfsPos = writer.Position;
             writer.Write(uint.MaxValue);
             writer.Write(uint.MaxValue);
@@ -243,7 +424,7 @@ namespace MPLibrary
                 writer.WriteUint32Offset(8);
                 FogData.Write(writer, this);
             }
-            if (MaterialData.Materials.Count > 0)  {
+            if (Materials.Count > 0)  {
                 writer.WriteUint32Offset(24);
                 MaterialData.Write(writer, this);
             }
@@ -283,7 +464,7 @@ namespace MPLibrary
                 FaceData.Write(writer, this);
             }
             writer.WriteUint32Offset(80);
-            if (TextureData.Textures.Count > 0) {
+            if (Textures.Count > 0) {
                 TextureData.Write(writer, this);
             }
             writer.WriteUint32Offset(88);
@@ -323,11 +504,11 @@ namespace MPLibrary
             if (MotionData.Animations.Count > 0) {
                 MotionData.Write(writer, this);
             }
-            if (SymbolData.Count > 0) {
+
+            if (SymbolData.SymbolIndices.Length > 0) {
                 writer.WriteUint32Offset(160);
                 SymbolData.Write(writer, this);
             }
-
 
             writer.WriteUint32Offset(_stringTableOfsPos);
             uint tblSize = WriteStringTable(writer);
@@ -357,16 +538,16 @@ namespace MPLibrary
             List<string> fileStrings = new List<string>();
 
             //Note dupe names doesn't matter because value dictionary will skip them
-            foreach (var mat in MaterialData.MaterialNames)
-                fileStrings.Add(mat);
+            foreach (var mat in Materials)
+                fileStrings.Add(mat.Name);
             foreach (var mat in AttributeData.AttributeNames)
                 fileStrings.Add(mat);
             foreach (var mesh in Meshes)
                 fileStrings.Add(mesh.Name);
             foreach (var obj in ObjectData.ObjectNames)
                 fileStrings.Add(obj);
-            foreach (var anim in TextureData.TextureNames)
-                fileStrings.Add(anim);
+            foreach (var tex in Textures)
+                fileStrings.Add(tex.Name);
             foreach (var anim in MotionData.GetStrings())
                 fileStrings.Add(anim);
 
@@ -444,6 +625,8 @@ namespace MPLibrary
             T instance = new T();
             instance.Offset = reader.ReadUInt32();
             instance.Count = reader.ReadUInt32();
+            if (instance.Offset == 0)
+                return instance;
 
             using (reader.TemporarySeek(instance.Offset, System.IO.SeekOrigin.Begin)) {
                 instance.Read(reader, header);

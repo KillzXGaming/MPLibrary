@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 
 namespace MPLibrary
@@ -46,10 +46,17 @@ namespace MPLibrary
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct Vector3XYZ
+    public class Vector3XYZ
     {
         public float X, Y, Z;
         public override string ToString() => $"{X},{Y},{Z}";
+
+        public Vector3XYZ() { }
+
+        public Vector3XYZ(float x, float y, float z)
+        {
+            X = x; Y = y; Z = z;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -86,14 +93,6 @@ namespace MPLibrary
         public byte R;
         public byte G;
         public byte B;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct MatrixData
-    {
-        public int BaseMatrixIndex;
-        public int MatrixCount;
-        public int MatrixOffset;
     }
 
     public class Primative : ISection

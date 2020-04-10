@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
@@ -21,8 +21,8 @@ namespace MPLibrary
                 List<Vector4> colors = new List<Vector4>();
                 for (int i = 0; i < comp.DataCount; i++)
                     colors.Add(new Vector4(
-                        reader.ReadByte() * 255f, reader.ReadByte() * 255f,
-                        reader.ReadByte() * 255f, reader.ReadByte() * 255f));
+                        reader.ReadByte() / 255f, reader.ReadByte() / 255f,
+                        reader.ReadByte() / 255f, reader.ReadByte() / 255f));
 
                 header.AddColorComponent(Components.IndexOf(comp), colors);
             }
@@ -43,14 +43,16 @@ namespace MPLibrary
             long dataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++)
             {
+                meshes[i].ObjectData.ColorIndex = i;
+
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
                 for (int j = 0; j < meshes[i].Colors.Count; j++)
                 {
-                    writer.Write((byte)(meshes[i].Colors[j].X / 255));
-                    writer.Write((byte)(meshes[i].Colors[j].Y / 255));
-                    writer.Write((byte)(meshes[i].Colors[j].Z / 255));
-                    writer.Write((byte)(meshes[i].Colors[j].W / 255));
+                    writer.Write((byte)(meshes[i].Colors[j].X * 255));
+                    writer.Write((byte)(meshes[i].Colors[j].Y * 255));
+                    writer.Write((byte)(meshes[i].Colors[j].Z * 255));
+                    writer.Write((byte)(meshes[i].Colors[j].W * 255));
                 }
             }
             writer.Align(4);

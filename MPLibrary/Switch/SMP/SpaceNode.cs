@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenTK;
 
-namespace MPLibrary.Switch.SMP
+namespace MPLibrary.SMP
 {
     public class SpaceNode
     {

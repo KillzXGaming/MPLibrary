@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 
 namespace MPLibrary
@@ -26,13 +26,17 @@ namespace MPLibrary
         {
             Palettes = reader.ReadMultipleStructs<PaletteInfo>(this.Count);
             long pos = reader.Position;
-            for (int i = 0; i < Palettes.Count; i++) {
+            for (int i = 0; i < Palettes.Count; i++)
+            {
                 reader.SeekBegin(pos + Palettes[i].DataOffset);
                 PaletteData.Add(reader.ReadBytes(Palettes[i].NumPalette * 2));
             }
+
+            header.AddPalette(Palettes, PaletteData);
         }
 
-        public override void Write(FileWriter writer, HsfFile header) {
+        public override void Write(FileWriter writer, HsfFile header)
+        {
             long startPos = writer.Position;
             for (int i = 0; i < Palettes.Count; i++)
                 writer.WriteStruct(Palettes[i]);

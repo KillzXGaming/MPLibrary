@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Library.IO;
+using STLibrary.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
@@ -19,7 +19,7 @@ namespace MPLibrary
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct ObjectData
+    public class ObjectData
     {
         public uint StringOffset;
         public ObjectType Type;
@@ -34,8 +34,9 @@ namespace MPLibrary
         public Vector3XYZ CullBoxMax;
         public float Unk;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 132)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 128)]
         public byte[] Unks;
+        public int Unknown2;
 
         public int FaceIndex;
         public int VertexIndex;
@@ -55,6 +56,17 @@ namespace MPLibrary
         public int NormalsOffset;
     }
 
+    public class ObjectDataNode
+    {
+        public List<ObjectDataNode> Children = new List<ObjectDataNode>();
+
+        public ObjectDataNode Parent;
+        public ObjectData ObjectData;
+
+        public ObjectDataNode(ObjectData obj) {
+            ObjectData = obj;
+        }
+    }
 
     public class ObjectDataSection : HSFSection
     {
@@ -68,6 +80,82 @@ namespace MPLibrary
             Objects = reader.ReadMultipleStructs<ObjectData>(this.Count);
             for (int i = 0; i < Objects.Count; i++)
                 ObjectNames.Add(header.GetString(reader, Objects[i].StringOffset));
+        }
+
+        /// <summary>
+        /// Creates an empty object 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static ObjectData CreateNewObject(ObjectType type)
+        {
+            ObjectData objectData = new ObjectData();
+            objectData.Type = type;
+            objectData.ConstDataOffset = 0; //Set at runtime
+            objectData.RenderFlags = 0;
+            objectData.ParentIndex = -1;
+            objectData.ChildrenCount = 0;
+            objectData.SymbolIndex = 0;
+            objectData.BaseTransform = new Transform()
+            {
+                Translate = new Vector3XYZ(),
+                Scale = new Vector3XYZ() { X = 1, Y = 1, Z = 1, },
+                Rotate = new Vector3XYZ(),
+            };
+            objectData.CurrentTransform = new Transform() //Set at runtime
+            {
+                Translate = new Vector3XYZ(),
+                Scale = new Vector3XYZ(),
+                Rotate = new Vector3XYZ(),
+            };
+            objectData.Unknown2 = -1;
+            objectData.Unks = new byte[128];
+            objectData.CullBoxMin = new Vector3XYZ();
+            objectData.CullBoxMax = new Vector3XYZ();
+            objectData.FaceIndex = -1;
+            objectData.VertexIndex = -1;
+            objectData.NormalIndex = -1;
+            objectData.ColorIndex = -1;
+            objectData.TexCoordIndex = -1;
+            objectData.MaterialDataOffset = 0; //Set at runtime
+            objectData.AttributeIndex = -1;
+            objectData.Unknown3 = 0;
+            objectData.VertexChildCount = 0;
+            objectData.VertexSymbolIndex = -1;
+            objectData.CluserCount = 0;
+            objectData.CluserSymbolIndex = -1;
+            objectData.HookFlag = 0;
+            objectData.CenvIndex = -1;
+            objectData.PositionsOffset = 0;
+            objectData.NormalsOffset = 0;
+
+            return objectData;
+        }
+
+        internal int[] GenerateSymbols(int startIndex)
+        {
+            List<int> symbols = new List<int>();
+
+            int index = startIndex + 1;
+            for (int i = 0; i < Objects.Count; i++)
+            {
+                if (Objects[i].ChildrenCount > 0 && Objects[i].ChildrenCount < Objects.Count)
+                {
+                    for (int j = 0; j < Objects.Count; j++)
+                    {
+                        if (Objects[j].ParentIndex == i)
+                            symbols.Add(j);
+                    }
+                }
+
+                if (Objects[i].ChildrenCount < Objects.Count)
+                {
+                    Objects[i].SymbolIndex = index;
+                    index += Objects[i].ChildrenCount;
+                }
+            }
+
+            return symbols.ToArray();
         }
 
         internal void ReadEffectMeshes(FileReader reader, HsfFile header)
