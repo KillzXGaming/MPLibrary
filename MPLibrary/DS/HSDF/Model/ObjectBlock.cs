@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using STLibrary.IO;
+using OpenTK;
 
 namespace MPLibrary.DS
 {
@@ -20,9 +21,9 @@ namespace MPLibrary.DS
         public float TranslateX;
         public float TranslateY;
         public float TranslateZ;
-        public int RotateX;
-        public int RotateY;
-        public int RotateZ;
+        public float RotateX;
+        public float RotateY;
+        public float RotateZ;
         public float ScaleX;
         public float ScaleY;
         public float ScaleZ;
@@ -40,9 +41,9 @@ namespace MPLibrary.DS
             TranslateX = reader.ReadSingleInt();
             TranslateY = reader.ReadSingleInt();
             TranslateZ = reader.ReadSingleInt();
-            RotateX = reader.ReadInt32();
-            RotateY = reader.ReadInt32();
-            RotateZ = reader.ReadInt32();
+            RotateX = reader.ReadInt32() / 16384f;
+            RotateY = reader.ReadInt32() / 16384f;
+            RotateZ = reader.ReadInt32() / 16384f;
             ScaleX = reader.ReadSingleInt();
             ScaleY = reader.ReadSingleInt();
             ScaleZ = reader.ReadSingleInt();
@@ -52,6 +53,29 @@ namespace MPLibrary.DS
             {
                 MeshData = (MeshBlock)header.ReadBlock(reader);
             }
+        }
+
+        public Matrix4 GetTransform(List<ObjectBlock> objects)
+        {
+            if (ParentIndex != -1)
+                return GetTransform() * objects[ParentIndex].GetTransform(objects);
+            else
+                return GetTransform();
+        }
+
+        public Matrix4 GetTransform()
+        {
+            Matrix4 meshScale = Matrix4.Identity;
+            if (MeshData != null)
+                meshScale = Matrix4.CreateScale(MeshData.ScaleX, MeshData.ScaleY, MeshData.ScaleZ);
+
+            return
+                 Matrix4.CreateScale(ScaleX, ScaleY, ScaleZ) *
+                 (Matrix4.CreateRotationX(RotateX) *
+                Matrix4.CreateRotationY(RotateY) *
+                Matrix4.CreateRotationZ(RotateZ)) *
+                Matrix4.CreateTranslation(TranslateX, TranslateY, TranslateZ) *
+                meshScale;  
         }
 
         public void Write(HsdfFile header, FileWriter writer)

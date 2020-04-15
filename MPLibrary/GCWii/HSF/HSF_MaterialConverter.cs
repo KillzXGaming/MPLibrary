@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class HSF_MaterialConverter
     {

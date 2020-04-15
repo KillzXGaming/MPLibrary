@@ -7,7 +7,7 @@ using STLibrary.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public enum ObjectType : int
     {

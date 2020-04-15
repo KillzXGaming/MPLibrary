@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using STLibrary.IO;
 using OpenTK;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class Board
     {

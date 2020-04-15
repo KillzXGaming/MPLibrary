@@ -39,7 +39,7 @@ namespace MPLibrary.DS
 
             var newsize = GetTriangleIndexCount(type, indexBuffer.Length);
             ushort[] buffer = new ushort[newsize];
-            ConvertTriangles(buffer, 0, type, indexBuffer);
+            ConvertTriangles(ref buffer, 0, type, indexBuffer);
             return buffer;
         }
 
@@ -64,7 +64,7 @@ namespace MPLibrary.DS
             return count / 3;
         }
 
-        public static void ConvertTriangles(ushort[] dstBuffer, int dstOffs, PolygonType type, ushort[] indexBuffer)
+        public static void ConvertTriangles(ref ushort[] dstBuffer, int dstOffs, PolygonType type, ushort[] indexBuffer)
         {
             int dst = dstOffs;
             if (type == PolygonType.Quad)

@@ -41,8 +41,6 @@ namespace MPLibrary
             ushort flags = reader.ReadUInt16();
             DataType dataType = (DataType)(flags & 0xFF);
 
-            Console.WriteLine($"dataType {dataType}");
-
             ushort numRootElements = reader.ReadUInt16();
             ushort numTotalElements = reader.ReadUInt16();
             uint numElements = ReadValue(reader, dataType);
@@ -152,8 +150,7 @@ namespace MPLibrary
             if (offset > reader.BaseStream.Length)
                 return "";
 
-            using (reader.TemporarySeek(offset, System.IO.SeekOrigin.Begin))
-            {
+            using (reader.TemporarySeek(offset, System.IO.SeekOrigin.Begin)) {
                 return reader.ReadZeroTerminatedString();
             }
         }

@@ -21,8 +21,8 @@ namespace MPLibrary.MP10
         public Vector3 Position { get; set; }
         public Vector3 Scale { get; set; }
 
+        public Matrix4 InverseTransform { get; set; }
         public Matrix4 Transform { get; set; }
-        public Matrix4 Transform2 { get; set; }
 
         public int Index { get; set; }
 
@@ -54,13 +54,13 @@ namespace MPLibrary.MP10
                 reader.ReadSingle(),
                 reader.ReadSingle());
             reader.Seek(0x14);
-        /*    float unknown3 = reader.ReadSingle();
-            uint padding1 = reader.ReadUInt32();
-            uint padding2 = reader.ReadUInt32();
-            uint unknown4 = reader.ReadUInt32();
-            uint padding3 = reader.ReadUInt32();*/
-            Transform = reader.ReadMatrix4(true);
-            Transform2 = reader.ReadMatrix4();
+            /*    float unknown3 = reader.ReadSingle();
+                uint padding1 = reader.ReadUInt32();
+                uint padding2 = reader.ReadUInt32();
+                uint unknown4 = reader.ReadUInt32();
+                uint padding3 = reader.ReadUInt32();*/
+            InverseTransform = reader.ReadMatrix4();
+            Transform = reader.ReadMatrix4();
             uint unknownOffset = reader.ReadUInt32();
             uint unknownOffset2 = reader.ReadUInt32();
             uint unknown5 = reader.ReadUInt32();

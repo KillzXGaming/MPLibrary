@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using STLibrary;
 using OpenTK;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class TrackData
     {
@@ -53,6 +53,16 @@ namespace MPLibrary
         ScaleX = 31,
         ScaleY = 32,
         ScaleZ = 33,
+
+        B_TranslateX = 34,
+        B_TranslateY = 35,
+        B_TranslateZ = 36,
+        B_RotationX = 37,
+        B_RotationY = 38,
+        B_RotationZ = 39,
+        B_ScaleX = 41,
+        B_ScaleY = 42,
+        B_ScaleZ = 43,
     }
 
     public enum MaterialTrackEffect : short
@@ -70,6 +80,16 @@ namespace MPLibrary
         ScaleX = 31,
         ScaleY = 32,
         ScaleZ = 33,
+
+        B_TranslateX = 34,
+        B_TranslateY = 35,
+        B_TranslateZ = 36,
+        B_RotationX = 37,
+        B_RotationY = 38,
+        B_RotationZ = 39,
+        B_ScaleX = 41,
+        B_ScaleY = 42,
+        B_ScaleZ = 43,
 
         AmbientColorR = 49,
         AmbientColorG = 50,
@@ -99,6 +119,16 @@ namespace MPLibrary
         ScaleX = 31,
         ScaleY = 32,
         ScaleZ = 33,
+
+        B_TranslateX = 34,
+        B_TranslateY = 35,
+        B_TranslateZ = 36,
+        B_RotationX = 37,
+        B_RotationY = 38,
+        B_RotationZ = 39,
+        B_ScaleX = 41,
+        B_ScaleY = 42,
+        B_ScaleZ = 43,
     }
     public enum InterpolationMode : short
     {
@@ -369,6 +399,13 @@ namespace MPLibrary
                             {
                                 //8 bytes
                                 case STInterpoaltionType.Step:
+                                    {
+                                        writer.Write(keyFrame.Frame);
+                                        writer.Write(keyFrame.Value);
+                                    }
+                                    break;
+                                //8 bytes
+                                case STInterpoaltionType.Linear:
                                     {
                                         writer.Write(keyFrame.Frame);
                                         writer.Write(keyFrame.Value);

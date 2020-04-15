@@ -5,7 +5,7 @@ using System.Text;
 using STLibrary.IO;
 using System.Runtime.InteropServices;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class HSFSection
     {

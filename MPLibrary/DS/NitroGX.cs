@@ -16,6 +16,14 @@ namespace MPLibrary.DS
             MTX_PUSH = 0x12,
             MTX_POP = 0x13,
             MTX_RESTORE = 0x14,
+            MTX_IDENTITY = 0x15,
+            MTX_4x4 = 0x16,
+            MTX_4x3 = 0x17,
+            MTX_4x4_MUL = 0x18,
+            MTX_4x3_MUL = 0x19,
+            MTX_3x3_MUL = 0x1A,
+            SCALE = 0x1B,
+            TRANSLATE = 0x1C,
 
             COLOR = 0x20,
             NORMAL = 0x21,
@@ -26,11 +34,24 @@ namespace MPLibrary.DS
             VTX_XZ = 0x26,
             VTX_YZ = 0x27,
             VTX_DIFF = 0x28,
+            POLYGON_ATTR = 0x29,
+            TEX_IMAGE_PARAMS = 0x2A,
+            TEX_PALETTE_BASE = 0x2B,
 
             DIF_AMB = 0x30,
+            MATERIAL_COLOR1 = 0x31,
+            LIGHT_COLOR0 = 0x32,
+            LIGHT_COLOR1 = 0x33,
+            SHININESS = 0x34,
 
             BEGIN_VTXS = 0x40,
             END_VTXS = 0x41,
+
+            SWAP_BUFFERS = 0x50,
+            VIEWPORT = 0x60,
+            BOX_TEST = 0x70,
+            POSITON_TEST = 0x71,
+            VECTOR_TEST = 0x72,
         }
 
         public enum PolyType
@@ -243,7 +264,6 @@ namespace MPLibrary.DS
             }
 
             internal void PushVertex() {
-               // Console.WriteLine($"vtx {sPosition}");
                 vertices.Add(new Vertex()
                 {
                     Position = sPosition,

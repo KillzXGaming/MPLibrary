@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Toolbox.Library.Animations;
 using System.IO;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class HSF_AnimationConverter
     {
@@ -165,6 +165,8 @@ namespace MPLibrary
                         group.TrackList.Add(ParseAnimTrack(reader, group, STInterpoaltionType.Bezier));
                     else if (reader.Value.Equals("Track_Bitmap"))
                         group.TrackList.Add(ParseAnimTrack(reader, group, STInterpoaltionType.Bitmap));
+                    else if (reader.Value.Equals("Track_Step"))
+                        group.TrackList.Add(ParseAnimTrack(reader, group, STInterpoaltionType.Step));
                 }
             }
 

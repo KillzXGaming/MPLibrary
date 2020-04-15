@@ -18,7 +18,6 @@ namespace MPLibrary
         MP8,
         MP9,
         MP10,
-        MP11,
         MPDS,
         SMP,
     }

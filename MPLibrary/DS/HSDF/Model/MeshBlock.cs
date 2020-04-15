@@ -36,7 +36,6 @@ namespace MPLibrary.DS
             ushort dataSize = reader.ReadUInt16();
             PolyGroups = reader.ReadMultipleStructs<PolyGroup>((int)numBlocks);
             Data = reader.ReadBytes(dataSize);
-            NitroGX.ReadCmds(Data);
         }
 
         public void Write(HsdfFile header, FileWriter writer)

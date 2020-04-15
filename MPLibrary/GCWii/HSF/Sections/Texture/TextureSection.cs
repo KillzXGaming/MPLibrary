@@ -7,7 +7,7 @@ using STLibrary.IO;
 using System.Runtime.InteropServices;
 using STLibrary;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct TextureInfo

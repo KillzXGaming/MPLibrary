@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using STLibrary;
 using OpenTK;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     public class HSFMotionAnimation : STAnimation
     {

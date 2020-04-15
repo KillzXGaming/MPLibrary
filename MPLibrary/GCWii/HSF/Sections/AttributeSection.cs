@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using STLibrary.IO;
 using System.Runtime.InteropServices;
 
-namespace MPLibrary
+namespace MPLibrary.GCN
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class AttributeData
