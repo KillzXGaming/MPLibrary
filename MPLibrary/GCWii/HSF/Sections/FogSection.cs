@@ -17,14 +17,12 @@ namespace MPLibrary.GCN
         public float Start { get; set; }
         public float End { get; set; }
 
-        public byte[] data;
-
         public override void Read(FileReader reader, HsfFile header) {
             ColorStart = new Vector4(
                 reader.ReadByte(), reader.ReadByte(),
                 reader.ReadByte(), reader.ReadByte());
             Start = reader.ReadSingle();
-                End = reader.ReadSingle();
+            End = reader.ReadSingle();
             ColorEnd = new Vector4(
                 reader.ReadByte(), reader.ReadByte(),
                 reader.ReadByte(), reader.ReadByte());

@@ -160,6 +160,8 @@ namespace MPLibrary.GCN
 
         internal void ReadEffectMeshes(FileReader reader, HsfFile header)
         {
+            var primitives = header.GetPrimitiveList();
+
             //Read additional custom effect meshes
             List<uint> readMeshes = new List<uint>();
             for (int i = 0; i < Objects.Count; i++)
@@ -169,7 +171,11 @@ namespace MPLibrary.GCN
                     continue;
 
                 EffectMesh mesh = new EffectMesh();
+                mesh.ObjectParent = Objects[i];
                 Meshes.Add(mesh);
+
+                if (Objects[i].FaceIndex != -1 && Objects[i].FaceIndex < primitives.Count)
+                    mesh.Primitive = primitives[Objects[i].FaceIndex];
 
                 readMeshes.Add((uint)Objects[i].PositionsOffset);
 
@@ -186,7 +192,7 @@ namespace MPLibrary.GCN
                     var normalData = header.NormalData.Components[Objects[i].NormalIndex];
                     using (reader.TemporarySeek(Objects[i].NormalsOffset, System.IO.SeekOrigin.Begin))
                     {
-                        for (int j = 0; j < comp.DataCount; j++)
+                        for (int j = 0; j < normalData.DataCount; j++)
                             mesh.Normals.Add(reader.ReadVec3());
                     }
                 }

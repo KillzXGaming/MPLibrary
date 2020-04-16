@@ -52,6 +52,10 @@ namespace MPLibrary.GCN
     {
         public string Name { get; set; }
 
+        public ObjectData ObjectParent { get; set; }
+
+        public PrimitiveObject Primitive = new PrimitiveObject();
+
         public List<Vector3> Positions = new List<Vector3>();
         public List<Vector3> Normals = new List<Vector3>();
 
@@ -309,6 +313,14 @@ namespace MPLibrary.GCN
             using (var writer = new FileWriter(stream, keepOpen)) {
                 Write(writer);
             }
+        }
+
+        public List<PrimitiveObject> GetPrimitiveList()
+        {
+            List<PrimitiveObject> primitives = new List<PrimitiveObject>();
+            foreach (var mesh in Meshes)
+                primitives.AddRange(mesh.Primitives);
+            return primitives;
         }
 
         //Regenerates symbols used by attributes and objects
