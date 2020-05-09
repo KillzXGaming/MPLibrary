@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Toolbox.Library.Animations;
+using Toolbox.Core.Animations;
 using System.Runtime.InteropServices;
-using STLibrary;
+using Toolbox.Core;
 using OpenTK;
 
 namespace MPLibrary.GCN
@@ -47,46 +47,50 @@ namespace MPLibrary.GCN
             if (skeleton == null) return;
 
             if (Frame == 0)
-                skeleton.reset();
+                skeleton.Reset();
 
             bool Updated = false; // no need to update skeleton of animations that didn't change
             foreach (AnimationNode node in this.AnimGroups)
             {
-                var b = skeleton.GetBone(node.Name);
+                var b = skeleton.SearchBone(node.Name);
                 if (b == null) continue;
 
                 Updated = true;
 
+                Vector3 position = Vector3.Zero;
+                Vector3 scale = Vector3.One;
+                Quaternion rotation = Quaternion.Identity;
+
                 if (node.TranslateX.HasKeys)
-                    b.pos.X = node.TranslateX.GetFrameValue(Frame) * HSF_Renderer.PreviewScale;
+                    position.X = node.TranslateX.GetFrameValue(Frame);
                 if (node.TranslateY.HasKeys)
-                    b.pos.Y = node.TranslateY.GetFrameValue(Frame) * HSF_Renderer.PreviewScale;
+                    position.Y = node.TranslateY.GetFrameValue(Frame);
                 if (node.TranslateZ.HasKeys)
-                    b.pos.Z = node.TranslateZ.GetFrameValue(Frame) * HSF_Renderer.PreviewScale;
+                    position.Z = node.TranslateZ.GetFrameValue(Frame);
 
                 if (node.ScaleX.HasKeys)
-                    b.sca.X = node.ScaleX.GetFrameValue(Frame);
-                else b.sca.X = 1;
+                    scale.X = node.ScaleX.GetFrameValue(Frame);
                 if (node.ScaleY.HasKeys)
-                    b.sca.Y = node.ScaleY.GetFrameValue(Frame);
-                else b.sca.Y = 1;
+                    scale.Y = node.ScaleY.GetFrameValue(Frame);
                 if (node.ScaleZ.HasKeys)
-                    b.sca.Z = node.ScaleZ.GetFrameValue(Frame);
-                else b.sca.Z = 1;
-
+                    scale.Z = node.ScaleZ.GetFrameValue(Frame);
 
                 if (node.RotationX.HasKeys || node.RotationY.HasKeys || node.RotationZ.HasKeys)
                 {
                     float x = node.RotationX.HasKeys ? MathHelper.DegreesToRadians(node.RotationX.GetFrameValue(Frame)) : b.EulerRotation.X;
                     float y = node.RotationY.HasKeys ? MathHelper.DegreesToRadians(node.RotationY.GetFrameValue(Frame)) : b.EulerRotation.Y;
                     float z = node.RotationZ.HasKeys ? MathHelper.DegreesToRadians(node.RotationZ.GetFrameValue(Frame)) : b.EulerRotation.Z;
-                    b.rot = EulerToQuat(z, y, x);
+                    rotation = EulerToQuat(z, y, x);
                 }
+
+                b.AnimationController.Position = position;
+                b.AnimationController.Scale = scale;
+                b.AnimationController.Rotation = rotation;
             }
 
             if (Updated)
             {
-                skeleton.update();
+                skeleton.Update();
             }
         }
 

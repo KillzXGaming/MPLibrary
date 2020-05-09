@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using STLibrary.IO;
+using Toolbox.Core.IO;
 using Newtonsoft.Json;
 
 namespace MPLibrary.GCN
 {
     public class MessFileData
     {
-        public List<MessageData> MessageFiles = new List<MessageData>();
+        public uint Version = 4;
+
+        public Dictionary<string, MessageData> MessageFiles = new Dictionary<string, MessageData>();
 
         public MessFileData() { }
 
@@ -46,12 +48,22 @@ namespace MPLibrary.GCN
 
         void Read(FileReader reader, Encoding encoding, uint version = 4)
         {
+            reader.SetByteOrder(true);
+            uint numFiles = reader.ReadUInt32();
+
+            using (reader.TemporarySeek(4, System.IO.SeekOrigin.Begin))
+            {
+                uint firstOffset = reader.ReadUInt32();
+                if (firstOffset == 4 + (numFiles * 4))
+                    version = 6;
+            }
+
             uint startPos = 0;
             if (version > 4)
                 startPos = 4;
 
-            reader.SetByteOrder(true);
-            uint numFiles = reader.ReadUInt32();
+            Version = version;
+
             for (int i = 0; i < numFiles; i++)
             {
                 reader.SeekBegin(4 + (i * 4));
@@ -62,34 +74,40 @@ namespace MPLibrary.GCN
                     
                 uint size = nextOffset - offset;
 
+                string name = $"File{i}".ToString();
+                if (version == 4)
+                    name = ((FileListMP4)i).ToString();
+
                 reader.SeekBegin(offset);
                 byte[] data = reader.ReadBytes((int)size);
-                MessageFiles.Add(ReadMessageData(data, encoding, version));
+                MessageFiles.Add(name, ReadMessageData(data, encoding, version));
             }
         }
 
         void Write(FileWriter writer, Encoding encoding, uint version)
         {
+            var files = MessageFiles.Values.ToList();
+
             writer.SetByteOrder(true);
-            writer.Write(MessageFiles.Count);
-            writer.Write(new uint[MessageFiles.Count]);
+            writer.Write(files.Count);
+            writer.Write(new uint[files.Count]);
             long sectionSizePos = writer.Position;
-            if (version <= 5)
+            if (version < 5)
             {
                 writer.Write(uint.MaxValue);
-                for (int i = 0; i < MessageFiles.Count; i++)
+                for (int i = 0; i < files.Count; i++)
                 {
                     writer.WriteUint32Offset(4 + (i * 4));
-                    WriteMessageData(writer, MessageFiles[i], encoding, version);
+                    WriteMessageData(writer, files[i], encoding, version);
                 }
                 writer.WriteSectionSizeU32(sectionSizePos, writer.BaseStream.Length);
             }
             else
             {
-                for (int i = 0; i < MessageFiles.Count; i++)
+                for (int i = 0; i < files.Count; i++)
                 {
                     writer.WriteUint32Offset(4 + (i * 4), 4);
-                    WriteMessageData(writer, MessageFiles[i], encoding, version);
+                    WriteMessageData(writer, files[i], encoding, version);
                 }
             }
         }
@@ -209,35 +227,35 @@ namespace MPLibrary.GCN
                         count++;
                         i++;
                     }
-                    text.AddRange($"(Align_{count})");
+                    text.AddRange($"[Align_{count}]");
                 }
                 else if (val == 0x0D)
-                    text.AddRange("(Select2)");
+                    text.AddRange("[Select2]");
                 else if (val == 0x0F)
-                    text.AddRange("(Select)");
+                    text.AddRange("[Select]");
                 else if (val == 0x1C)
                 {
-                    text.AddRange($"(Dialog:[{(DialogCodes)values[i + 1]}])");
+                    text.AddRange($"[Dialog:{(DialogCodes)values[i + 1]}]");
                     i++;
                 }
                 else if (val == 0x1E)
                 {
                     //End of color tag
-                    if (values[i + 1] == 8)
-                        text.AddRange($")");
+                    if (values[i + 1] == (byte)ColorCodes.END)
+                        text.AddRange($"]");
                     else
-                        text.AddRange($"(COLOR:[{(ColorCodes)values[i+1]}]");
+                        text.AddRange($"[COLOR:({(ColorCodes)values[i+1]})");
 
                     i++;
                 }
                 else if (val == 0x1F)
                 {
-                    text.AddRange($"(INSERT:[{(RuntimeCodes)values[i + 1]}])");
+                    text.AddRange($"[INSERT:{(RuntimeCodes)values[i + 1]}]");
                     i++;
                 }
                 else if (val == 0x0E)
                 {
-                    text.AddRange($"(ICON:[{(IconCodes)values[i + 1]}])");
+                    text.AddRange($"[ICON:{(IconCodes)values[i + 1]}]");
                     i++;
                 }
                 else
@@ -256,7 +274,7 @@ namespace MPLibrary.GCN
             for (int i = 0; i < text.Length; i++)
             {
                 char cha = text[i];
-                if (cha == '(')
+                if (cha == '[')
                 {
                     List<byte> specials = new List<byte>();
                     specials.AddRange(TryParseSpecial(text, ref i, "COLOR", typeof(ColorCodes)));
@@ -272,7 +290,7 @@ namespace MPLibrary.GCN
                     else
                         values.AddRange(specials);
                 }
-                else if (cha == ')')
+                else if (cha == ']')
                 {
                     values.Add((byte)0x1E);
                     values.Add((byte)8);
@@ -306,11 +324,17 @@ namespace MPLibrary.GCN
         {
             List<byte> values = new List<byte>();
 
-            int sizeCheck = type.Length + 3; //Include (, :, and [
+            int sizeCheck = type.Length + 2; //Include : and [
+            if (type == "COLOR")
+                sizeCheck = type.Length + 3;
+
             if (text.Length > i + sizeCheck && text.Substring(i + 1, type.Length) == type)
             {
                 //Go from the start of the tag and split at the end to get our value
                 var valeText = text.Remove(0, i + sizeCheck).Split(']').FirstOrDefault();
+                if (type == "COLOR")
+                     valeText = text.Remove(0, i + sizeCheck).Split(')').FirstOrDefault();
+
                 var valueCode = (byte)Enum.Parse(enumType, valeText);
 
                 if (type == "Dialog")
@@ -366,15 +390,19 @@ namespace MPLibrary.GCN
 
             { 0x1D, '*' }, //Bold characters
 
+            { 0x5B, '`' },
             { 0x5C, '\'' },
+            { 0x5D, '(' },
+            { 0x5E, ')' },
 
             { 0x3F, '/' },
 
-            { 0x7E, '~' }, //Todo
+            { 0x7E, '&' },
 
             { 0x7B, ':' },
             { 0x82, ',' },
-            { 0x84, '@' }, //Todo. Seems to be used in numbers so add a random character for now
+            { 0x83, '@' },
+            { 0x84, '_' }, //Todo. Seems to be used in numbers so add a random character for now
             { 0x85, '.' },
 
             { 0xC0, '"' }, //start
@@ -436,8 +464,10 @@ namespace MPLibrary.GCN
 
         enum ColorCodes : byte
         {
+            BLACK = 0x01,
             BLUE = 0x02,
-            RED = 0x03,
+            PINK = 0x03,
+            RED = 0x04,
             GREEN = 0x05,
             YELLOW = 0x07,
             END = 0x08,
@@ -463,9 +493,45 @@ namespace MPLibrary.GCN
             Toad_HostBoardDialog = 15,
             Toad_ItemShop = 16,
             System = 17,
-            MainMenu = 18,
+            ModeSelect = 18,
             ItemInfo = 19,
             Goomba_Roulette = 20,
+            LuckMiniGame = 21,
+            BoardStart = 22,
+            Map3Event = 23,
+            MiniGameNames = 24,
+            MG_446 = 25,
+            DebugMessage = 26,
+            PartyMode = 27,
+            Setup = 28,
+            Miracle = 29,
+            MiniGameKoopa = 30,
+            StoryMode = 31,
+            BowserStory = 32,
+            Map4Event = 33,
+            MiniGameInst = 34,
+            E3 = 35,
+            SAF = 36,
+            MiniGameInst_Sys = 37,
+            BoardResults = 38,
+            BoardResults2 = 39,
+            Map5Event = 40,
+            MiniGameMode = 41,
+            MG_445 = 42,
+            MG_447 = 43,
+            MG_448 = 44,
+            MG_449 = 45,
+            MG_450 = 46,
+            Tutorial = 47,
+            OptionRoom = 48,
+            Map6Event = 49,
+            Charley = 50,
+            PresentRoom = 51,
+            ExtraRoom = 52,
+            StaffPost = 53,
+            StaffName = 54,
+            OpeningDemo = 55,
+            MiniGameExInst = 56,
         }
 
         public class MessageData

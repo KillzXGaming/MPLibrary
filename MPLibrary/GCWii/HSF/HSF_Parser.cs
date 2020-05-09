@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using STLibrary.IO;
+using Toolbox.Core.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 
@@ -91,7 +91,7 @@ namespace MPLibrary.GCN
 
         }
 
-        public static int GetFormatId(STLibrary.Decode_Gamecube.TextureFormats format)
+        public static int GetFormatId(Toolbox.Core.Decode_Gamecube.TextureFormats format)
         {
             return TextureSection.FormatList.FirstOrDefault(x => x.Value == format).Key;
         }

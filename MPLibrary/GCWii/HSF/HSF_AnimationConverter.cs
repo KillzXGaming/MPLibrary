@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Toolbox.Library.Animations;
+using Toolbox.Core.Animations;
 using System.IO;
 
 namespace MPLibrary.GCN

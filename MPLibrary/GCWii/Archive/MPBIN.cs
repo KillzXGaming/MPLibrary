@@ -4,15 +4,49 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Toolbox;
-using Toolbox.Library;
-using STLibrary.IO;
-using STLibrary;
+using Toolbox.Core;
+using Toolbox.Core.IO;
+using System.IO;
 
 namespace MPLibrary.GCN
 {
-    public class MPBIN
+    public class MPBIN : IFileFormat, IArchiveFile
     {
+        public bool CanSave { get; set; } = true;
+        public string[] Description { get; set; } = new string[] { "Mario Party GCN .bin" };
+        public string[] Extension { get; set; } = new string[] { "*.bin" };
+
+        public File_Info FileInfo { get; set; }
+
+        public bool CanAddFiles { get; set; } = true;
+        public bool CanRenameFiles { get; set; }
+        public bool CanReplaceFiles { get; set; } = true;
+        public bool CanDeleteFiles { get; set; } = true;
+
+        public void ClearFiles() { files.Clear(); }
+
+        public IEnumerable<ArchiveFileInfo> Files => files;
         public List<FileEntry> files = new List<FileEntry>();
+
+        public bool Identify(File_Info fileInfo, System.IO.Stream stream)
+        {
+            if (stream.Length < 16)
+                return false;
+
+            if (Utils.GetExtension(fileInfo.FileName) == ".bin" || 
+                Utils.GetExtension(fileInfo.FileName) == ".dat")
+            {
+                using (var reader = new FileReader(stream, true))
+                {
+                    reader.SetByteOrder(true);
+                    uint count = reader.ReadUInt32();
+                    uint offset = reader.ReadUInt32();
+                    if (offset == 4 + (4 * count) || offset == 8 + (4 * count))
+                        return true;
+                }
+            }
+            return false;
+        }
 
         public enum CompressionType
         {
@@ -30,11 +64,15 @@ namespace MPLibrary.GCN
         public MPBIN(string FileName)
         {
             using (var stream = new System.IO.FileStream(FileName, System.IO.FileMode.Open, System.IO.FileAccess.Read)) {
-                Load(FileName, stream);
+                Read(FileName, stream);
             }
         }
 
-        public void Load(string FileName, System.IO.Stream stream)
+        public void Load(System.IO.Stream stream) {
+            Read(FileInfo.FileName, stream);
+        }
+
+        void Read(string FileName, System.IO.Stream stream)
         {
             using (var reader = new FileReader(stream))
             {
@@ -54,26 +92,30 @@ namespace MPLibrary.GCN
                     var file = new FileEntry();
                     uint decompressedSize = reader.ReadUInt32();
                     file.CompressionType = (CompressionType)reader.ReadUInt32();
-                    file.FileData = reader.ReadBytes((int)compSize);
+                    byte[] data = reader.ReadBytes((int)compSize);
                     files.Add(file);
 
                     switch (file.CompressionType)
                     {
                         case CompressionType.LZSS:
-                            file.FileData = DecompressLZSS(file.FileData, (int)decompressedSize);
+                            data = DecompressLZSS(data, (int)decompressedSize);
                             break;
                         case CompressionType.SLIDE:
                         case CompressionType.FLIDE:
                         case CompressionType.FSLIDE_Alt:
-                            file.FileData = DecompressSlide(file.FileData, (int)decompressedSize);
+                            data = DecompressSlide(data, (int)decompressedSize);
                             break;
                         case CompressionType.RLE:
-                            file.FileData = DecompressRLE(file.FileData, (int)decompressedSize);
+                            data = DecompressRLE(data, (int)decompressedSize);
                             break;
                         case CompressionType.INFLATE:
-                            file.FileData = STLibraryCompression.ZLIB.Decompress(Utils.SubArray(file.FileData, 8));
+                            data = STLibraryCompression.ZLIB.Decompress(ByteUtils.SubArray(data, 8));
+                            break;
+                        default:
                             break;
                     }
+
+                    file.SetData(data);
                 }
                 UpdateFileNames(FileName);
             }
@@ -134,15 +176,15 @@ namespace MPLibrary.GCN
                     writer.Write(uncomp_size);
                     writer.Write((uint)files[i].CompressionType);
 
-                    byte[] savedBytes = files[i].FileData;
+                    byte[] savedBytes = files[i].AsBytes();
                     switch (files[i].CompressionType)
                     {
                         case CompressionType.LZSS:
-                            savedBytes = LZSS.Encode(files[i].FileData);
+                            savedBytes = LZSS.Encode(savedBytes);
                             break;
                         case CompressionType.INFLATE:
                             {
-                                var compressed = STLibraryCompression.ZLIB.Compress(files[i].FileData);
+                                var compressed = STLibraryCompression.ZLIB.Compress(savedBytes);
 
                                 List<byte> output = new List<byte>();
                                 output.AddRange(WriteBigEndian(uncomp_size));
@@ -158,7 +200,7 @@ namespace MPLibrary.GCN
                             {
                                 List<byte> output = new List<byte>();
                                 output.AddRange(WriteBigEndian(uncomp_size));
-                                output.AddRange(CompressSlide(files[i].FileData, uncomp_size));
+                                output.AddRange(CompressSlide(savedBytes, uncomp_size));
                                 savedBytes = output.ToArray();
                                 output.Clear();
                             }
@@ -171,12 +213,38 @@ namespace MPLibrary.GCN
             }
         }
 
-        public class FileEntry
+        public bool AddFile(ArchiveFileInfo archiveFileInfo)
         {
-            public string FileName { get; set; }
+            CompressionType type = CompressionType.None;
+            if (archiveFileInfo.FileName.Contains(".lz"))
+                type = CompressionType.LZSS;
+            if (archiveFileInfo.FileName.Contains(".s"))
+                type = CompressionType.SLIDE;
+            if (archiveFileInfo.FileName.Contains(".fs"))
+                type = CompressionType.FLIDE;
+            if (archiveFileInfo.FileName.Contains(".fsa"))
+                type = CompressionType.FSLIDE_Alt;
+            if (archiveFileInfo.FileName.Contains(".z"))
+                type = CompressionType.INFLATE;
 
-            public byte[] FileData { get; set; }
+            files.Add(new FileEntry()
+            {
+                FileData = archiveFileInfo.FileData,
+                CompressionType = type,
+            });
+            UpdateFileNames(FileInfo.FileName);
 
+            return false;
+        }
+
+        public bool DeleteFile(ArchiveFileInfo archiveFileInfo)
+        {
+            files.Remove((FileEntry)archiveFileInfo);
+            return true;
+        }
+
+        public class FileEntry : ArchiveFileInfo
+        {
             public string ImageKey { get; set; }
 
             public CompressionType CompressionType { get; set; }

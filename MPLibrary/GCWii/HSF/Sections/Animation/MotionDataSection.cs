@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using STLibrary.IO;
-using Toolbox.Library.Animations;
+using Toolbox.Core.IO;
+using Toolbox.Core.Animations;
 using System.Runtime.InteropServices;
-using STLibrary;
 using OpenTK;
 
 namespace MPLibrary.GCN

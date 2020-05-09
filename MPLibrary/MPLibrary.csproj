@@ -1,35 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4867DCD5-4865-4A62-A5ED-DCBCCB9D022C}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MPLibrary</RootNamespace>
-    <AssemblyName>MPLibrary</AssemblyName>
     <TargetFrameworks>netstandard2.1;net46</TargetFrameworks>
-    <FileAlignment>512</FileAlignment>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath></OutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -38,14 +17,8 @@
     <Reference Include="OpenTK">
       <HintPath>..\STLibrary\OpenTK.dll</HintPath>
     </Reference>
-    <Reference Include="OpenTK.GLControl">
-      <HintPath>..\STLibrary\OpenTK.GLControl.dll</HintPath>
-    </Reference>
     <Reference Include="SharpYaml">
       <HintPath>.\SharpYaml.dll</HintPath>
-    </Reference>
-    <Reference Include="STLibrary">
-      <HintPath>.\STLibrary.dll</HintPath>
     </Reference>
     <Reference Include="Syroot.BinaryData">
       <HintPath>..\STLibrary\Syroot.BinaryData.dll</HintPath>
@@ -53,95 +26,12 @@
     <Reference Include="Syroot.Maths">
       <HintPath>..\STLibrary\Syroot.Maths.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <Reference Include="Toolbox.Core">
+      <HintPath>Toolbox.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="3DS\ZDAT.cs" />
-    <Compile Include="DS\HSDF\Animations\Animation.cs" />
-    <Compile Include="DS\HSDF\HsdfFile.cs" />
-    <Compile Include="DS\ISection.cs" />
-    <Compile Include="DS\LZ77.cs" />
-    <Compile Include="DS\HSDF\Model\EnvelopeBlock.cs" />
-    <Compile Include="DS\HSDF\Model\MaterialBlock.cs" />
-    <Compile Include="DS\HSDF\Model\MaterialData.cs" />
-    <Compile Include="DS\HSDF\Model\MeshBlock.cs" />
-    <Compile Include="DS\HSDF\Model\ModelBlock.cs" />
-    <Compile Include="DS\HSDF\Model\MatrixBlock.cs" />
-    <Compile Include="DS\HSDF\Model\ObjectBlock.cs" />
-    <Compile Include="DS\HSDF\Model\SkinningBlock.cs" />
-    <Compile Include="DS\HSDF\Model\StringTable.cs" />
-    <Compile Include="DS\HSDF\Model\AttributeBlock.cs" />
-    <Compile Include="DS\LZBIN.cs" />
-    <Compile Include="DS\NitroGX.cs" />
-    <Compile Include="DS\NitroGXLegacy.cs" />
-    <Compile Include="DS\NitroTex.cs" />
-    <Compile Include="DS\ReaderExtensions.cs" />
-    <Compile Include="DS\HSDF\Texture\ImageBlock.cs" />
-    <Compile Include="DS\HSDF\Texture\NameBlock.cs" />
-    <Compile Include="DS\HSDF\Texture\PaletteDataBlock.cs" />
-    <Compile Include="DS\HSDF\Texture\TextureBlock.cs" />
-    <Compile Include="DS\HSDF\Texture\TextureMapperBlock.cs" />
-    <Compile Include="DS\TriangleHelper.cs" />
-    <Compile Include="Game.cs" />
-    <Compile Include="GCWii\Archive\MPBIN.cs" />
-    <Compile Include="GCWii\ATB\ATB.cs" />
-    <Compile Include="GCWii\Board.cs" />
-    <Compile Include="GCWii\HSF\HSF_AnimationConverter.cs" />
-    <Compile Include="GCWii\HSF\HSF_MaterialConverter.cs" />
-    <Compile Include="GCWii\HSF\HSF_ModelImporter.cs" />
-    <Compile Include="GCWii\HSF\HSF_Parser.cs" />
-    <Compile Include="GCWii\HSF\HSF_Renderer.cs" />
-    <Compile Include="GCWii\HSF\HSF_Structs.cs" />
-    <Compile Include="GCWii\HSF\Sections\Animation\HSFMotionAnimation.cs" />
-    <Compile Include="GCWii\HSF\Sections\Animation\MotionDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\AttributeSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\CenvDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\FaceDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\FogSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\MaterialSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\MatrixDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\ObjectDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\SkeletonDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\SymbolDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Texture\PaletteSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Texture\TextureSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Unused\ClusterDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Unused\MapAttributeDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Unused\PartDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Unused\ShapeDataSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Vertex\ColorSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Vertex\NormalSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Vertex\PositionSection.cs" />
-    <Compile Include="GCWii\HSF\Sections\Vertex\TexCoordSection.cs" />
-    <Compile Include="GCWii\Message\MessFileData.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Switch\SMP\Board.cs" />
-    <Compile Include="Switch\SMP\SpaceNode.cs" />
-    <Compile Include="WiiU\BinaryXML.cs" />
-    <Compile Include="WiiU\BNFM\Animation\BNFMSA.cs" />
-    <Compile Include="WiiU\BNFM\Animation\BNFM_SkeletalAnimation.cs" />
-    <Compile Include="WiiU\BNFM\BNFIM_Parse.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_Attribute.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_Bone.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_AttributeList.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_Material.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_MaterialMapper.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_Mesh.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_TextureSlot.cs" />
-    <Compile Include="WiiU\BNFM\BNFM_Vertex.cs" />
-    <Compile Include="WiiU\Board.cs" />
-    <Compile Include="WiiU\PAC.cs" />
-    <Compile Include="Wii\BRES.cs" />
+    <Folder Include="Properties\" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="N64\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

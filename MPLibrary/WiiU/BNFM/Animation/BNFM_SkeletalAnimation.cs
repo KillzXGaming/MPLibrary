@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Toolbox.Library.Animations;
+using Toolbox.Core.Animations;
 using System.Runtime.InteropServices;
-using STLibrary;
+using Toolbox.Core;
 using OpenTK;
 using MPLibrary.GCN;
 

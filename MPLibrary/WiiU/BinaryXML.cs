@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using STLibrary.IO;
+using Toolbox.Core.IO;
 using System.IO;
 using System.Xml;
 
@@ -153,6 +153,11 @@ namespace MPLibrary
             using (reader.TemporarySeek(offset, System.IO.SeekOrigin.Begin)) {
                 return reader.ReadZeroTerminatedString();
             }
+        }
+
+        public void Save(Stream stream)
+        {
+
         }
 
         public static string PrintXML(string xml)

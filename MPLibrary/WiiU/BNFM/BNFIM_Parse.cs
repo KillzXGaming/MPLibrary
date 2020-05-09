@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using STLibrary.IO;
+using Toolbox.Core.IO;
 using OpenTK;
 
 namespace MPLibrary.MP10
@@ -258,6 +258,11 @@ namespace MPLibrary.MP10
                     }
                 }
             }
+        }
+
+        public void Save(System.IO.Stream stream)
+        {
+
         }
 
         private BNFM_TextureSlot GetTextureSlot(List<uint> positions, uint offset)
