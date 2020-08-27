@@ -2,7 +2,7 @@
 A Mario Party Library
 
 ## Building
- Requires this project https://github.com/KillzXGaming/STLibrary. Build with visual studio and add all the reference dlls which are in the same project folder.
+ All library references in MPLibrary/Lib folder. Build MPLibrary.sln file with visual studio.
 
 ## Supported Games
  - MP4-8
