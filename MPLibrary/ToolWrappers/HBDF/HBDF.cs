@@ -7,6 +7,9 @@ using Toolbox.Core;
 using Toolbox.Core.IO;
 using Toolbox.Core.OpenGL;
 using OpenTK;
+using Toolbox.Core.Nitro;
+using OpenTK.Graphics.OpenGL;
+using PartyStudio;
 
 namespace MPLibrary.DS
 {
@@ -39,19 +42,29 @@ namespace MPLibrary.DS
             Header.Save(stream);
         }
 
+        private STGenericModel CachedModel;
         public STGenericModel ToGeneric()
         {
+            if (CachedModel != null) return CachedModel;
+
             var model = new STGenericModel(FileInfo.FileName);
             foreach (var mdl in Header.Models) {
                 foreach (var obj in mdl.Objects) {
                     if (obj.Type == ObjectBlock.ObjectType.Mesh)
-                        model.Meshes.Add(LoadMesh(obj, obj.MeshData));
+                        model.Meshes.Add(LoadMesh(mdl, obj, obj.MeshData));
                 }
             }
+            foreach (var tex in Header.Textures) {
+                foreach (var image in tex.Images) {
+                    model.Textures.Add(new HBDFTexture(image));
+                }
+            }
+
+            CachedModel = model;
             return model;
         }
 
-        private STGenericMesh LoadMesh(ObjectBlock obj, MeshBlock mesh)
+        private STGenericMesh LoadMesh(ModelBlock mdl, ObjectBlock obj, MeshBlock mesh)
         {
             STGenericMesh genericMesh = new STGenericMesh();
             genericMesh.Name = obj.Name;
@@ -67,7 +80,10 @@ namespace MPLibrary.DS
                 vertex.TexCoords = new Vector2[1]
                     { ctx.vertices[i].TexCoord };
                 vertex.Colors = new Vector4[1]
-                    { new Vector4(ctx.vertices[i].Color,ctx.vertices[i].Alpha) };
+                    {
+                        new Vector4(ctx.vertices[i].Color / 255f,
+                                    ctx.vertices[i].Alpha / 255f)
+                    };
 
                 vertex.Position = Vector3.TransformPosition(vertex.Position, transform);
                 genericMesh.Vertices.Add(vertex);
@@ -77,11 +93,35 @@ namespace MPLibrary.DS
             for (int i = 0; i < ctx.indices.Count; i++)
                 faces[i] = ctx.indices[i];
 
-            genericMesh.PolygonGroups.Add(new STPolygonGroup()
-            {
-                PrimitiveType = STPrimitiveType.Triangles,
-                Faces = faces.ToList(),
-            });
+            foreach (var poly in mesh.PolyGroups) {
+                var material = mdl.Materials[poly.MaterialIndex];
+
+            /*    uint[] polyFaces = new uint[poly.FaceCount];
+                for (int i = 0; i < poly.FaceCount; i++) {
+                    polyFaces[i] = ctx.indices[poly.FaceStart + i];
+                }*/
+
+                STGenericMaterial genericMaterial = new STGenericMaterial();
+                genericMaterial.Name = material.Name;
+
+                if (material.MaterialBlock.AttributeIndex != -1) {
+                    var attribute = mdl.Attributes[material.MaterialBlock.AttributeIndex];
+                    genericMaterial.TextureMaps.Add(new STGenericTextureMap()
+                    {
+                        Name = attribute.TextureName,
+                        Type = STTextureType.Diffuse,
+                    });
+                }
+
+                genericMesh.PolygonGroups.Add(new STPolygonGroup()
+                {
+                    PrimitiveType = STPrimitiveType.Triangles,
+                    Material = genericMaterial,
+                    Faces = faces.ToList(),
+                });
+
+                break;
+            }
 
             return genericMesh;
         }

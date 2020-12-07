@@ -19,6 +19,7 @@ namespace PartyStudio
             Name = name;
             TextureInfo = info;
             ImageData = data;
+            CanEdit = true;
 
             Platform = new GamecubeSwizzle();
             ReloadInfo();

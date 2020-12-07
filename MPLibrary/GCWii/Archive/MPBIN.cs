@@ -143,7 +143,34 @@ namespace MPLibrary.GCN
                     string magic = fileReader.ReadString(4, Encoding.ASCII);
                     if (magic == "HSFV")
                     {
-                        files[i].FileName = $"{files[i].FileName}.hsf";
+                        fileReader.SeekBegin(12);
+                        bool hasFog = fileReader.ReadUInt32() > 0;
+
+                        fileReader.SeekBegin(44);
+                        bool hasMesh = fileReader.ReadUInt32() > 0;
+
+                        fileReader.SeekBegin(76);
+                        bool hasObjects = fileReader.ReadUInt32() > 0;
+
+                        fileReader.SeekBegin(84);
+                        bool hasTexture = fileReader.ReadUInt32() > 0;
+
+                        fileReader.SeekBegin(180);
+                        bool hasMotion = fileReader.ReadUInt32() > 0;
+
+                        if (hasMesh)
+                            files[i].FileName = $"MESH_{files[i].FileName}.hsf";
+                        else if (hasMotion)
+                            files[i].FileName = $"MOTION_{files[i].FileName}.hsf";
+                        else if (hasObjects)
+                            files[i].FileName = $"OBJ_{files[i].FileName}.hsf";
+                        else if (hasTexture)
+                            files[i].FileName = $"TEX_{files[i].FileName}.hsf";
+                        else if (hasFog)
+                            files[i].FileName = $"FOG_{files[i].FileName}.hsf";
+                        else
+                            files[i].FileName = $"{files[i].FileName}.hsf";
+
                         files[i].ImageKey = "model";
                     }
                     else if (fileReader.BaseStream.Length > 16)

@@ -11,7 +11,7 @@ using OpenTK;
 
 namespace MPLibrary.GCN
 {
-    public class HSF : ObjectTreeNode, IFileFormat, IModelFormat
+    public class HSF : ObjectTreeNode, IFileFormat, IModelFormat, IReplaceableModel
     {
         public bool CanSave { get; set; } = true;
 
@@ -20,10 +20,8 @@ namespace MPLibrary.GCN
 
         public File_Info FileInfo { get; set; }
 
-        public bool Identify(File_Info fileInfo, System.IO.Stream stream)
-        {
-            using (var reader = new FileReader(stream, true))
-            {
+        public bool Identify(File_Info fileInfo, System.IO.Stream stream) {
+            using (var reader = new FileReader(stream, true)) {
                 return reader.CheckSignature(4, "HSFV");
             }
         }
@@ -51,8 +49,6 @@ namespace MPLibrary.GCN
             foreach (var mesh in GenericMeshes)
                 model.Materials.AddRange(mesh.GetMaterials());
 
-            Console.WriteLine($"ToGeneric Meshes {model.Meshes.Count}");
-
             model.Textures.AddRange(GenericTextures);
 
             Model = model;
@@ -69,6 +65,7 @@ namespace MPLibrary.GCN
             LoadSkeleton();
             LoadMeshes();
             LoadTextures();
+            LoadAnimations();
 
             HSFRenderer = new HSF_Renderer(this, ToGeneric());
         }
@@ -76,6 +73,41 @@ namespace MPLibrary.GCN
         public void Save(System.IO.Stream stream)
         {
             Header.Save(stream);
+            return;
+
+            foreach (var obj in Header.Meshes)
+            {
+                int index = Header.Meshes.IndexOf(obj);
+                var transform = Renderer.Meshes[index].Mesh.Transform;
+
+                var current = obj.ObjectData.CurrentTransform;
+                current.Translate.X += transform.Position.X;
+                current.Translate.Y += transform.Position.Y;
+                current.Translate.Z += transform.Position.Z;
+                obj.ObjectData.CurrentTransform = current;
+
+                for (int i = 0; i < Header.ObjectCount; i++)
+                    if (Header.ObjectData.ObjectNames[i] == obj.Name)
+                        Header.ObjectData.Objects[i] = obj.ObjectData;
+
+                transform.Reset();
+            }
+
+            Header.Save(stream);
+        }
+
+        public void FromGeneric(STGenericScene scene) {
+            Header = HSFModelImporter.Import(scene, new HSFModelImporter.ImportSettings());
+            Model = null;
+
+            return;
+
+            LoadSkeleton();
+            LoadMeshes();
+            LoadTextures();
+            LoadAnimations();
+
+            HSFRenderer = new HSF_Renderer(this, ToGeneric());
         }
 
         private void LoadSkeleton()
@@ -87,6 +119,8 @@ namespace MPLibrary.GCN
             {
                 var info = Header.ObjectData.Objects[i];
                 var name = Header.ObjectData.ObjectNames[i];
+                if (name == string.Empty)
+                    name = $"Object_{i}";
 
                 //Add a dummy bone. Some bone data is set at runtime and uses large random values
                 if (info.ChildrenCount > Header.ObjectCount)
@@ -134,8 +168,20 @@ namespace MPLibrary.GCN
             foreach (var bone in boneNodes)
                 skeletonFolder.AddChild(bone);
 
+            Skeleton.PreviewScale = 0.05f;
             Skeleton.Reset();
             Skeleton.Update();
+        }
+
+        private void LoadAnimations()
+        {
+            ObjectTreeNode animFolder = new ObjectTreeNode("Animations");
+            this.AddChild(animFolder);
+
+            foreach (var anim in Header.MotionData.Animations) {
+                anim.AnimationNextFrame += OnAnimationNextFrame;
+                animFolder.AddChild(new ObjectTreeNode(anim.Name) { Tag = anim });
+            }
         }
 
         private void LoadMeshes()
@@ -189,7 +235,10 @@ namespace MPLibrary.GCN
                     genericMesh.Name = mesh.Name;
                     GenericMeshes.Add(genericMesh);
 
-                    meshesFolder.AddChild(new ObjectTreeNode(mesh.Name) { Tag = genericMesh });
+                    meshesFolder.AddChild(new ObjectTreeNode(mesh.Name) {
+                        Tag = genericMesh,
+                        ImageKey = "Mesh",
+                    });
 
                     int objectIndex = Header.ObjectData.Objects.IndexOf(mesh.ObjectData);
                     if (objectIndex != -1)
@@ -215,6 +264,7 @@ namespace MPLibrary.GCN
                         matData.VertexMode == 0))
                     {
                         genericMesh.IsTransparent = true;
+                        group.IsTransparentPass = true;
                     }
 
                     genericMat.Mesh = mesh;
@@ -225,6 +275,7 @@ namespace MPLibrary.GCN
                         var attribute = attributes[i].Item2;
                         var texIndex = attribute.TextureIndex;
                         genericMat.Attributes.Add(attribute);
+
                         group.Material.TextureMaps.Add(new HSFMatTexture(this)
                         {
                             Attribute = attribute,
@@ -288,7 +339,6 @@ namespace MPLibrary.GCN
             List<STVertex> outVertices = new List<STVertex>();
             for (int index = 2; index < vertices.Count; index++)
             {
-
                 bool isEven = (index % 2 != 1);
 
                 var vert1 = vertices[index - 2];
@@ -339,15 +389,15 @@ namespace MPLibrary.GCN
 
             position *= HSF_Renderer.PreviewScale;
 
-            if (!mesh.HasRigging)
+            int nodeIndex = Header.ObjectData.Objects.IndexOf(mesh.ObjectData);
+            if (nodeIndex != -1)
             {
-                int nodeIndex = Header.ObjectData.Objects.IndexOf(mesh.ObjectData);
                 boneIndices.Clear();
                 boneWeights.Clear();
                 boneIndices.Add(nodeIndex);
                 boneWeights.Add(1);
 
-                 position = Vector3.TransformPosition(position, skeleton.Bones[nodeIndex].Transform);
+                position = Vector3.TransformPosition(position, skeleton.Bones[nodeIndex].Transform);
             }
 
             if (mesh.HasRigging)
@@ -426,7 +476,6 @@ namespace MPLibrary.GCN
                     }
                     mbOffset += multiBind.Count;
                 }
-
             }
 
             return new STVertex()
@@ -438,6 +487,198 @@ namespace MPLibrary.GCN
                 BoneWeights = boneWeights,
                 TexCoords = new Vector2[] { uv0 },
             };
+        }
+
+        private void OnAnimationNextFrame(object sender, EventArgs e)
+        {
+            HSFMotionAnimation anim = (HSFMotionAnimation)sender;
+            PlayAttriubteAnim(anim);
+            PlayMaterialAnim(anim);
+            PlaySkeletalAnim(anim);
+
+            Console.WriteLine($"OnAnimationNextFrame {anim.Name}");
+        }
+
+        private void PlayAttriubteAnim(HSFMotionAnimation anim)
+        {
+            foreach (AnimationNode node in anim.AnimGroups)
+            {
+                if (node.Mode == TrackMode.Attriubute)
+                {
+                    int index = (int)node.ValueIndex;
+
+                    if (!Header.AttributeAnimControllers.ContainsKey(index))
+                        Header.AttributeAnimControllers.Add(index, new AttributeAnimController());
+
+                    var controller = Header.AttributeAnimControllers[index];
+                    foreach (AnimTrack track in node.GetTracks())
+                    {
+                        switch (track.TrackEffect)
+                        {
+                            case TrackEffect.TranslateX:
+                                controller.TranslateX = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.TranslateY:
+                                controller.TranslateY = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.TranslateZ:
+                                controller.TranslateZ = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.RotationX:
+                                controller.RotateX = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.RotationY:
+                                controller.RotateY = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.RotationZ:
+                                controller.RotateZ = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.ScaleX:
+                                controller.ScaleX = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.ScaleY:
+                                controller.ScaleY = track.GetFrameValue(anim.Frame);
+                                break;
+                            case TrackEffect.ScaleZ:
+                                controller.ScaleZ = track.GetFrameValue(anim.Frame);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void PlayMaterialAnim(HSFMotionAnimation anim)
+        {
+            foreach (AnimationNode node in anim.AnimGroups)
+            {
+                if (node.Mode == TrackMode.Material)
+                {
+                    int index = (int)node.ValueIndex;
+
+                    if (!Header.MatAnimControllers.ContainsKey(index))
+                        Header.MatAnimControllers.Add(index, new MatAnimController());
+
+                    var controller = Header.MatAnimControllers[index];
+                    controller.AmbientColorB = 1;
+                    controller.AmbientColorG = 1;
+                    controller.AmbientColorR = 1;
+                    foreach (AnimTrack track in node.GetTracks())
+                    {
+                        switch ((MaterialTrackEffect)track.TrackEffect)
+                        {
+                            case MaterialTrackEffect.AmbientColorR:
+                                controller.AmbientColorR = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.AmbientColorG:
+                                controller.AmbientColorG = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.AmbientColorB:
+                                controller.AmbientColorB = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.LitAmbientColorR:
+                                controller.LitAmbientColorR = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.LitAmbientColorG:
+                                controller.LitAmbientColorG = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.LitAmbientColorB:
+                                controller.LitAmbientColorB = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.ShadowColorR:
+                                controller.ShadowColorR = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.ShadowColorG:
+                                controller.ShadowColorG = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.ShadowColorB:
+                                controller.ShadowColorB = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.HiliteScale:
+                                controller.HiliteScale = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.ReflectionBrightness:
+                                controller.ReflectionIntensity = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.Transparency:
+                                controller.TransparencyInverted = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.MatUnknown3:
+                                controller.Unknown3 = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.MatUnknown4:
+                                controller.Unknown4 = track.GetFrameValue(anim.Frame);
+                                break;
+                            case MaterialTrackEffect.MatUnknown5:
+                                controller.Unknown5 = track.GetFrameValue(anim.Frame);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void PlaySkeletalAnim(HSFMotionAnimation anim)
+        {
+            STSkeleton skeleton = Renderer.Scene.Models[0].Skeleton;
+            foreach (var container in Runtime.ModelContainers)
+            {
+                var skel = container.SearchActiveSkeleton();
+                if (skel != null)
+                    skeleton = skel;
+            }
+
+            Console.WriteLine($"skeleton {skeleton != null}");
+
+            if (skeleton == null)
+                return;
+
+            if (anim.Frame == 0)
+                skeleton.Reset();
+
+            bool Updated = false; // no need to update skeleton of animations that didn't change
+            foreach (AnimationNode node in anim.AnimGroups)
+            {
+                var b = skeleton.SearchBone(node.Name);
+                if (b == null) continue;
+
+                Updated = true;
+
+                Vector3 position = b.Position;
+                Vector3 scale = b.Scale;
+                Quaternion rotation = b.Rotation;
+
+                if (node.TranslateX.HasKeys)
+                    position.X = node.TranslateX.GetFrameValue(anim.Frame) * HSF_Renderer.PreviewScale;
+                if (node.TranslateY.HasKeys)
+                    position.Y = node.TranslateY.GetFrameValue(anim.Frame) * HSF_Renderer.PreviewScale;
+                if (node.TranslateZ.HasKeys)
+                    position.Z = node.TranslateZ.GetFrameValue(anim.Frame) * HSF_Renderer.PreviewScale;
+
+                if (node.ScaleX.HasKeys)
+                    scale.X = node.ScaleX.GetFrameValue(anim.Frame);
+                if (node.ScaleY.HasKeys)
+                    scale.Y = node.ScaleY.GetFrameValue(anim.Frame);
+                if (node.ScaleZ.HasKeys)
+                    scale.Z = node.ScaleZ.GetFrameValue(anim.Frame);
+
+                if (node.RotationX.HasKeys || node.RotationY.HasKeys || node.RotationZ.HasKeys)
+                {
+                    float x = node.RotationX.HasKeys ? MathHelper.DegreesToRadians(node.RotationX.GetFrameValue(anim.Frame)) : b.EulerRotation.X;
+                    float y = node.RotationY.HasKeys ? MathHelper.DegreesToRadians(node.RotationY.GetFrameValue(anim.Frame)) : b.EulerRotation.Y;
+                    float z = node.RotationZ.HasKeys ? MathHelper.DegreesToRadians(node.RotationZ.GetFrameValue(anim.Frame)) : b.EulerRotation.Z;
+                    rotation = STMath.FromEulerAngles(new Vector3(x,y,z));
+                }
+
+                b.AnimationController.Position = position;
+                b.AnimationController.Scale = scale;
+                b.AnimationController.Rotation = rotation;
+            }
+
+            if (Updated)
+            {
+                skeleton.Update();
+            }
         }
     }
 }

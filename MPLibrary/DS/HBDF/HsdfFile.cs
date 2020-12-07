@@ -30,6 +30,21 @@ namespace MPLibrary.DS
             Read(new FileReader(stream));
         }
 
+        public static bool HasMeshes(System.IO.Stream stream)
+        {
+            using (var reader = new FileReader(stream, true)) {
+                reader.SetByteOrder(false);
+                uint magic = reader.ReadUInt32();
+                uint fileSize = reader.ReadUInt32();
+                while (!reader.EndOfStream)
+                {
+                    string sectionMagic = reader.ReadString(4, Encoding.ASCII);
+                    return sectionMagic == "MDLF";
+                }
+            }
+            return false;
+        }
+
         public void Read(FileReader reader)
         {
             reader.SetByteOrder(false);

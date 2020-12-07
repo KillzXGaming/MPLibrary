@@ -44,20 +44,20 @@ namespace MPLibrary.GCN
 
         public override void PrepareShaders()
         {
-            if (ShaderProgram != null)
+            if (ActiveShader != null)
                 return;
 
             var vertShader = System.IO.File.ReadAllText($"{Runtime.ExecutableDir}/Shader/HSF/HSF.vert");
             var fragShader = System.IO.File.ReadAllText($"{Runtime.ExecutableDir}/Shader/HSF/HSF.frag");
 
-            ShaderProgram = new ShaderProgram(
+            ActiveShader = new ShaderProgram(
                 new VertexShader(vertShader),
                 new FragmentShader(fragShader));
         }
 
         public override void ReloadUniforms(ShaderProgram shader)
         {
-            SetBoneUniforms(shader, Model.Skeleton);
+            SetBoneUniforms(shader, Scene.Models[0].Skeleton);
             SetRenderSettings(shader);
         }
 
@@ -87,9 +87,12 @@ namespace MPLibrary.GCN
             GL.GenBuffers(1, out uboAtt);
         }
 
-        public override void RenderMaterials(ShaderProgram shader, STGenericMesh mesh, STPolygonGroup group, STGenericMaterial material)
+        public override void RenderMaterials(ShaderProgram shader, STGenericMesh mesh, 
+            STPolygonGroup group, STGenericMaterial material, Vector4 highlight_color)
         {
             var msh = (HSFMesh)mesh;
+
+            shader.SetVector4("highlight_color", highlight_color);
 
             //Note we render picking pass here for backface culling
             shader.SetFloat("brightness", 1.0f);
@@ -116,6 +119,7 @@ namespace MPLibrary.GCN
             GL.BindTexture(TextureTarget.Texture2D, RenderTools.defaultTex.RenderableTex.TexID);
 
             shader.SetInt("textureCount", mat.TextureMaps.Count);
+            Console.WriteLine($"textureCount {mat.TextureMaps.Count}");
 
             TextureAttribute[] attriutes = new TextureAttribute[6];
             for (int i = 0; i < 6; i++)
@@ -158,7 +162,7 @@ namespace MPLibrary.GCN
                     attriutes[i].texPositionStart.Y = controller.TranslateY;
                 }
 
-                var binded = BindTexture(shader, Model.Textures, (HSFMatTexture)mat.TextureMaps[i], i + 1);
+                var binded = BindTexture(shader, Scene.Models[0].Textures, (HSFMatTexture)mat.TextureMaps[i], i + 1);
                 shader.SetInt($"texture{i}", i + 1);
             }
 

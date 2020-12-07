@@ -113,7 +113,13 @@ namespace MPLibrary.DS
                     if (magic == "HBDF")
                     {
                         files[i].FileName = $"{files[i].FileName}.hbdf";
-                        files[i].ImageKey = "model";
+                        if (HsdfFile.HasMeshes(files[i].FileData))
+                        {
+                            files[i].ImageKey = "model";
+                            files[i].FileName = $"Models/{files[i].FileName}.hbdf";
+                        }
+                        else
+                            files[i].FileName = $"Animations/{files[i].FileName}.hbdf";
                     }
                     else
                         files[i].FileName = $"{files[i].FileName}.dat";

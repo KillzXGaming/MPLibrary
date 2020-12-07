@@ -78,42 +78,44 @@ namespace MPLibrary.MP10
                 uint[] numKeysPerTrack = reader.ReadUInt32s(10);
                 uint[] trackOffsets = reader.ReadUInt32s(10);
 
-                var group = new AnimationNode();
+                var group = new STBoneAnimGroup();
+                group.UseQuaternion = true;
                 anim.AnimGroups.Add(group);
 
                 using (reader.TemporarySeek(boneOffset, System.IO.SeekOrigin.Begin)) {
                     group.Name = header.GetString(reader, reader.ReadUInt32());
                 }
+
                 LoadTrackList(trackOffsets, group, reader);
             }
 
             return anim;
         }
 
-        private static void LoadTrackList(uint[] offsets, AnimationNode group, FileReader reader)
+        private static void LoadTrackList(uint[] offsets, STBoneAnimGroup group, FileReader reader)
         {
             for (int t = 0; t < 10; t++) {
                 if (offsets[t] != uint.MaxValue) {
                     reader.SeekBegin(offsets[t]);
                     switch ((TrackType)t) {
-                        case TrackType.TranslateX: LoadTrack(group, group.TranslateX, reader); break;
-                        case TrackType.TranslateY: LoadTrack(group, group.TranslateY, reader); break;
-                        case TrackType.TranslateZ: LoadTrack(group, group.TranslateZ, reader); break;
-                        case TrackType.ScaleX: LoadTrack(group, group.ScaleX, reader); break;
-                        case TrackType.ScaleY: LoadTrack(group, group.ScaleY, reader); break;
-                        case TrackType.ScaleZ: LoadTrack(group, group.ScaleZ, reader); break;
-                        case TrackType.RotateX: LoadTrack(group, group.RotationX, reader); break;
-                        case TrackType.RotateY: LoadTrack(group, group.RotationY, reader); break;
-                        case TrackType.RotateZ: LoadTrack(group, group.RotationZ, reader); break;
-                        case TrackType.RotateW: LoadTrack(group, group.RotationW, reader); break;
+                        case TrackType.TranslateX: group.TranslateX = LoadTrack(group, reader); break;
+                        case TrackType.TranslateY: group.TranslateY = LoadTrack(group, reader); break;
+                        case TrackType.TranslateZ: group.TranslateZ = LoadTrack(group, reader); break;
+                        case TrackType.ScaleX: group.ScaleX = LoadTrack(group, reader); break;
+                        case TrackType.ScaleY: group.ScaleY = LoadTrack(group, reader); break;
+                        case TrackType.ScaleZ: group.ScaleZ = LoadTrack(group, reader); break;
+                        case TrackType.RotateX: group.RotateX = LoadTrack(group, reader); break;
+                        case TrackType.RotateY: group.RotateY = LoadTrack(group, reader); break;
+                        case TrackType.RotateZ: group.RotateZ = LoadTrack(group, reader); break;
+                        case TrackType.RotateW: group.RotateW = LoadTrack(group, reader); break;
                     }
                 }
             }
         }
 
-        private static void LoadTrack(AnimationNode group, AnimTrack track,  FileReader reader)
+        private static STAnimationTrack LoadTrack(STBoneAnimGroup group,  FileReader reader)
         {
-            track = new AnimTrack(group);
+            STAnimationTrack track = new STAnimationTrack();
 
             uint keyOffset = reader.ReadUInt32();
             uint frameCount = reader.ReadUInt32();
@@ -125,15 +127,17 @@ namespace MPLibrary.MP10
             KeyType type = (KeyType)reader.ReadByte();
             byte unk4 = reader.ReadByte();
 
-            Console.WriteLine($"numKeyFrames {numKeyFrames} {type}");
+            Console.WriteLine($"numKeyFrames {numKeyFrames} {type} frameCount {frameCount}");
 
             reader.SeekBegin(keyOffset);
             for (int i = 0; i < numKeyFrames; i++)
             {
                 if (type == KeyType.Normal)
                 {
-                    float frame = reader.ReadSingle();
+                    float frame = reader.ReadUInt32();
                     float value = reader.ReadSingle();
+
+                    Console.WriteLine($"frame {frame} value {value}");
 
                     track.KeyFrames.Add(new STKeyFrame()
                     {
@@ -143,22 +147,24 @@ namespace MPLibrary.MP10
                 }
                 else if (type == KeyType.Hermite)
                 {
-                    float frame = i;
+                    float frame = reader.ReadUInt32();
                     float value = reader.ReadSingle();
-                    float padding = reader.ReadSingle();
                     float slopeIn = reader.ReadSingle();
                     float padding2 = reader.ReadSingle();
                     float slopeOut = reader.ReadSingle();
+
+                    Console.WriteLine($"frame {frame} value {value}");
 
                     track.KeyFrames.Add(new STHermiteKeyFrame()
                     {
                         Frame = frame,
                         Value = value,
-                        TangentIn = slopeIn,
-                        TangentOut = slopeOut,
+                      // TangentIn = slopeIn,
+                       // TangentOut = slopeOut,
                     });
                 }
             }
+            return track;
         }
 
         public enum KeyType
