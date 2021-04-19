@@ -63,8 +63,11 @@ namespace MPLibrary.GCN
 
                         prim.TriCount = prim.Vertices.Length;
                         var newVert = new VertexGroup[prim.Vertices.Length + primCount + 1];
+                        //Copy the first 3 group to the full vertex group
                         Array.Copy(prim.Vertices, 0, newVert, 0, prim.Vertices.Length);
+                        //Make the 4th group set as the second group
                         newVert[3] = newVert[1];
+                        //Copy the rest of the groups in the strip
                         Array.Copy(verts, 0, newVert, prim.Vertices.Length + 1, verts.Length);
                         prim.Vertices = newVert;
                     }

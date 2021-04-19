@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core.IO;
+using Toolbox.Core;
 using OpenTK;
 
 namespace MPLibrary.MP10
 {
-    public class BnfmFile
+    public class BnfmFile 
     {
         public List<BNFM_Mesh> Meshes = new List<BNFM_Mesh>();
         public List<BNFM_Bone> Bones = new List<BNFM_Bone>();

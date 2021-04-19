@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
 using Toolbox.Core;
 using Toolbox.Core.IO;
 using Toolbox.Core.ModelView;
@@ -17,7 +17,7 @@ namespace MPLibrary.GCN
     {
         public class ImportSettings
         {
-            public bool UseTriStrips = false;
+            public bool UseTriStrips = true;
         }
 
         public class ObjectSettings
@@ -49,7 +49,16 @@ namespace MPLibrary.GCN
                 newtex.Name = tex.Name;
                 hsf.Textures.Add(newtex);
             }
-                
+
+            if (hsf.Textures.Count == 0)
+            {
+
+            }
+
+            var newtex2 = CreateTexture(new GenericBitmapTexture("dummy.png"));
+            newtex2.Name = "dummy";
+            hsf.Textures.Add(newtex2);
+
             hsf.FogData.Count = 1;
             hsf.FogData.ColorStart = new Vector4(77, 77, 77, 128);
             hsf.FogData.ColorEnd = new Vector4(255, 0, 0, 255);
@@ -168,15 +177,7 @@ namespace MPLibrary.GCN
                         }
                         else
                         {
-                            primlist = new List<PrimitiveBrawl>();
-                            for (int i = 0; i < mesh.Faces.Count / 3; i++)
-                            {
-                                PrimitiveBrawl prim = new PrimitiveBrawl(PrimType.TriangleList); // Trilist
-                                prim.Indices.Add(mesh.Faces[i++]);
-                                prim.Indices.Add(mesh.Faces[i++]);
-                                prim.Indices.Add(mesh.Faces[i]);
-                                primlist.Add(prim);
-                            }
+
                         }
 
                         foreach (var primitive in primlist)
@@ -188,39 +189,96 @@ namespace MPLibrary.GCN
 
                             prim.Flags = 0;
                             prim.NbtData = new OpenTK.Vector3(1, 0, 0);
-                            prim.MaterialIndex = materialIndex;
-                            if (!settings.UseTriStrips)
+                            if (hsf.Materials.Count > materialIndex)
+                                prim.MaterialIndex = materialIndex;
+
+                            if (settings.UseTriStrips)
                             {
-                                prim.Vertices = new VertexGroup[4];
-                                prim.Vertices[3] = new VertexGroup(); //Empty last group
+                                prim.Vertices = new VertexGroup[primitive.Indices.Count + 1];
                             }
                             else
                             {
-                                prim.Vertices = new VertexGroup[primitive.Indices.Count];
+                                prim.Vertices = new VertexGroup[4];
+                                prim.Vertices[3] = new VertexGroup(); //Empty last grou
                             }
                             msh.Primitives.Add(prim);
-                            for (int i = 0; i < primitive.Indices.Count; i++)
+
+                            if (prim.Type == PrimitiveType.TriangleStrip)
                             {
-                                var vertexIndex = (int)primitive.Indices[i];
-                                var vertex = mesh.Vertices[vertexIndex];
-
-                                short colorIndex = -1;
-                                short texCoordIndex = -1;
-                                short positionIndex = (short)positions.IndexOf(vertex.Position);
-                                short normaIndex = (short)normals.IndexOf(vertex.Normal);
-
-                                if (vertex.Colors.Length > 0)
-                                    colorIndex = (short)colors.IndexOf(vertex.Colors[0]);
-                                if (vertex.TexCoords.Length > 0)
-                                    texCoordIndex = (short)texCoords.IndexOf(vertex.TexCoords[0]);
-
-                                prim.Vertices[i] = new VertexGroup()
+                                for (int i = 0; i < 3; i++)
                                 {
-                                    PositionIndex = positionIndex,
-                                    UVIndex = texCoordIndex,
-                                    ColorIndex = colorIndex,
-                                    NormalIndex = normaIndex,
-                                };
+                                    var vertexIndex = (int)primitive.Indices[i];
+                                    var vertex = mesh.Vertices[vertexIndex];
+
+                                    short colorIndex = -1;
+                                    short texCoordIndex = -1;
+                                    short positionIndex = (short)positions.IndexOf(vertex.Position);
+                                    short normaIndex = (short)normals.IndexOf(vertex.Normal);
+
+                                    if (vertex.Colors.Length > 0)
+                                        colorIndex = (short)colors.IndexOf(vertex.Colors[0]);
+                                    if (vertex.TexCoords.Length > 0)
+                                        texCoordIndex = (short)texCoords.IndexOf(vertex.TexCoords[0]);
+
+                                    prim.Vertices[i] = new VertexGroup()
+                                    {
+                                        PositionIndex = positionIndex,
+                                        UVIndex = texCoordIndex,
+                                        ColorIndex = colorIndex,
+                                        NormalIndex = normaIndex,
+                                    };
+                                }
+
+                                prim.Vertices[3] = new VertexGroup();
+                                for (int i = 4; i < prim.Vertices.Length; i++)
+                                {
+                                    var vertexIndex = (int)primitive.Indices[i-1];
+                                    var vertex = mesh.Vertices[vertexIndex];
+
+                                    short colorIndex = -1;
+                                    short texCoordIndex = -1;
+                                    short positionIndex = (short)positions.IndexOf(vertex.Position);
+                                    short normaIndex = (short)normals.IndexOf(vertex.Normal);
+
+                                    if (vertex.Colors.Length > 0)
+                                        colorIndex = (short)colors.IndexOf(vertex.Colors[0]);
+                                    if (vertex.TexCoords.Length > 0)
+                                        texCoordIndex = (short)texCoords.IndexOf(vertex.TexCoords[0]);
+
+                                    prim.Vertices[i] = new VertexGroup()
+                                    {
+                                        PositionIndex = positionIndex,
+                                        UVIndex = texCoordIndex,
+                                        ColorIndex = colorIndex,
+                                        NormalIndex = normaIndex,
+                                    };
+                                }
+                            }
+                            else
+                            {
+                                for (int i = 0; i < primitive.Indices.Count; i++)
+                                {
+                                    var vertexIndex = (int)primitive.Indices[i];
+                                    var vertex = mesh.Vertices[vertexIndex];
+
+                                    short colorIndex = -1;
+                                    short texCoordIndex = -1;
+                                    short positionIndex = (short)positions.IndexOf(vertex.Position);
+                                    short normaIndex = (short)normals.IndexOf(vertex.Normal);
+
+                                    if (vertex.Colors.Length > 0)
+                                        colorIndex = (short)colors.IndexOf(vertex.Colors[0]);
+                                    if (vertex.TexCoords.Length > 0)
+                                        texCoordIndex = (short)texCoords.IndexOf(vertex.TexCoords[0]);
+
+                                    prim.Vertices[i] = new VertexGroup()
+                                    {
+                                        PositionIndex = positionIndex,
+                                        UVIndex = texCoordIndex,
+                                        ColorIndex = colorIndex,
+                                        NormalIndex = normaIndex,
+                                    };
+                                }
                             }
                         }
                     }
@@ -247,7 +305,7 @@ namespace MPLibrary.GCN
             info.Format = (byte)MPLibrary.GCN.HSFTexture.GetFormatId(format);
             info.MaxLOD = 0;
 
-            var data = Decode_Gamecube.EncodeFromBitmap(texture.GetBitmap(),
+             var data = Decode_Gamecube.EncodeFromBitmap(texture.GetBitmap(),
                 Decode_Gamecube.TextureFormats.CMPR);
 
             return new HSFTexture(texture.Name, info, data.Item1);
