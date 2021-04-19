@@ -17,7 +17,7 @@ namespace MPLibrary.GCN
     {
         public class ImportSettings
         {
-            public bool UseTriStrips = true;
+            public bool UseTriStrips = false;
         }
 
         public class ObjectSettings
@@ -177,7 +177,15 @@ namespace MPLibrary.GCN
                         }
                         else
                         {
-
+                            primlist = new List<PrimitiveBrawl>();
+                            for (int i = 0; i < mesh.Faces.Count; i++)
+                            {
+                                PrimitiveBrawl prim = new PrimitiveBrawl(PrimType.TriangleList); // Trilist
+                                prim.Indices.Add(mesh.Faces[i++]);
+                                prim.Indices.Add(mesh.Faces[i++]);
+                                prim.Indices.Add(mesh.Faces[i]);
+                                primlist.Add(prim);
+                            }
                         }
 
                         foreach (var primitive in primlist)
