@@ -5,6 +5,7 @@ using Toolbox.Core.Animations;
 using System.Runtime.InteropServices;
 using Toolbox.Core;
 using OpenTK;
+using System.Text.Json.Serialization;
 
 namespace MPLibrary.GCN
 {
@@ -31,9 +32,12 @@ namespace MPLibrary.GCN
             return tracks;
         }
 
+        public AnimationNode GetGroup(string name) {
+            return AnimGroups.FirstOrDefault(x => x.Name == name) as AnimationNode;
+        }
+
         public STSkeleton GetActiveSkeleton()
         {
-        
             return null;
         }
 
@@ -42,6 +46,16 @@ namespace MPLibrary.GCN
             if (Frame > FrameCount) return;
 
             AnimationNextFrame?.Invoke(this, EventArgs.Empty);
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+        }
+
+        public void Init()
+        {
+
         }
     }
 
@@ -81,13 +95,20 @@ namespace MPLibrary.GCN
             return tracks;
         }
 
-        private AnimTrack FindByEffect(TrackEffect effect)
+        public AnimTrack FindByEffect(TrackEffect effect)
         {
             for (int i = 0; i < TrackList.Count; i++)
                 if (TrackList[i].TrackEffect == effect)
                     return TrackList[i];
 
             return new AnimTrack(this);
+        }
+
+        public AnimationNode() { }
+
+        public AnimationNode(TrackMode mode)
+        {
+            this.Mode = TrackMode.Material;
         }
     }
 
@@ -103,15 +124,58 @@ namespace MPLibrary.GCN
 
         public TrackMode TrackMode;
 
+        [JsonIgnore]
         public AnimationNode ParentGroup;
 
         public AnimTrack(AnimationNode group) {
             ParentGroup = group;
         }
 
-        public override float GetFrameValue(float frame, float startFrame = 0)
+        public AnimTrack(AnimationNode group, TrackMode mode, TrackEffect track, float constant)
         {
-            if (InterpolationType == STInterpoaltionType.Constant)
+            ParentGroup = group;
+            TrackMode = mode;
+            TrackEffect = track;
+            ConstantUnk = 0;
+            Constant = constant;
+            this.InterpolationType = STInterpoaltionType.Constant;
+            this.OnKeyInserted += delegate
+            {
+                if (this.KeyFrames.Count > 0 && this.InterpolationType == STInterpoaltionType.Constant)
+                {
+                    this.InterpolationType = STInterpoaltionType.Linear;
+
+                    if (TrackEffect == TrackEffect.Visible || TrackEffect == TrackEffect.TextureIndex)
+                        this.InterpolationType = STInterpoaltionType.Step;
+                }
+            };
+        }
+
+        public void SetKeyFrame(float frame, float value, float in_slope = 0, float out_slope = 0)
+        {
+            if (this.InterpolationType == STInterpoaltionType.Bezier)
+            {
+                this.KeyFrames.Add(new STBezierKeyFrame()
+                {
+                    Frame = frame,
+                    Value = value,
+                    SlopeIn = in_slope,
+                    SlopeOut = out_slope,
+                });
+            }
+            else
+            {
+                this.KeyFrames.Add(new STKeyFrame()
+                {
+                    Frame = frame,
+                    Value = value,
+                });
+            }
+        }
+
+        public override float GetFrameValue(float frame)
+        {
+            if (KeyFrames.Count == 0 && InterpolationType == STInterpoaltionType.Constant)
                 return Constant;
              
             if (KeyFrames.Count == 0) return 0;
@@ -120,7 +184,7 @@ namespace MPLibrary.GCN
             STKeyFrame LK = KeyFrames.First();
             STKeyFrame RK = KeyFrames.Last();
 
-            float Frame = frame - startFrame;
+            float Frame = frame - StartFrame;
 
             foreach (STKeyFrame keyFrame in KeyFrames)
             {
@@ -140,40 +204,43 @@ namespace MPLibrary.GCN
                     case STInterpoaltionType.Linear: return InterpolationHelper.Lerp(LK.Value, RK.Value, Weight);
                     case STInterpoaltionType.Bezier:
                         {
-                            return InterpolationHelper.Lerp(LK.Value, RK.Value, Weight);
-
                             STBezierKeyFrame bezierKeyLK = (STBezierKeyFrame)LK;
                             STBezierKeyFrame bezierKeyRK = (STBezierKeyFrame)RK;
-
                             float length = RK.Frame - LK.Frame;
 
-                            return InterpolationHelper.BezierInterpolate(frame,
-                             bezierKeyLK.Frame,
-                             bezierKeyRK.Frame,
-                             bezierKeyLK.SlopeIn,
-                             bezierKeyRK.SlopeOut,
-                             bezierKeyLK.Value,
-                             bezierKeyRK.Value);
-                        }
-                    case STInterpoaltionType.Hermite:
-                        {
-                            STHermiteKeyFrame hermiteKeyLK = (STHermiteKeyFrame)LK;
-                            STHermiteKeyFrame hermiteKeyRK = (STHermiteKeyFrame)RK;
-
-                            float length = RK.Frame - LK.Frame;
-
-                            return InterpolationHelper.HermiteInterpolate(frame,
-                             hermiteKeyLK.Frame,
-                             hermiteKeyRK.Frame,
-                             hermiteKeyLK.TangentIn,
-                             hermiteKeyLK.TangentOut,
-                             hermiteKeyLK.Value,
-                             hermiteKeyRK.Value);
+                            return GetPointHermite(
+                                bezierKeyLK.Value,
+                                bezierKeyRK.Value,
+                                bezierKeyLK.SlopeIn,
+                                bezierKeyRK.SlopeOut, (frame - LK.Frame) / length);
                         }
                 }
             }
 
             return LK.Value;
+        }
+
+        private static float GetPointHermite(float p0, float p1, float s0, float s1, float t)
+        {
+            float cf0 = (p0 * 2) + (p1 * -2) + (s0 * 1) + (s1 * 1);
+            float cf1 = (p0 * -3) + (p1 * 3) + (s0 * -2) + (s1 * -1);
+            float cf2 = (p0 * 0) + (p1 * 0) + (s0 * 1) + (s1 * 0);
+            float cf3 = (p0 * 1) + (p1 * 0) + (s0 * 0) + (s1 * 0);
+            return GetPointCubic(cf0, cf1, cf2, cf3, t);
+        }
+
+        private static float GetPointBezier(float p0, float p1, float p2, float p3, float t)
+        {
+            float cf0 = (p0 * -1) + (p1 * 3) + (p2 * -3) + (p3 * 1);
+            float cf1 = (p0 * 3) + (p1 * -6) + (p2 * 3) + (p3 * 0);
+            float cf2 = (p0 * -3) + (p1 * 3) + (p2 * 0) + (p3 * 0);
+            float cf3 = (p0 * 1) + (p1 * 0) + (p2 * 0) + (p3 * 0);
+            return GetPointCubic(cf0, cf1, cf2, cf3, t);
+        }
+
+        private static float GetPointCubic(float cf0, float cf1, float cf2, float cf3, float t)
+        {
+            return (((cf0 * t + cf1) * t + cf2) * t + cf3);
         }
     }
 }

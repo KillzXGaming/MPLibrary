@@ -10,19 +10,19 @@ using Toolbox.Core;
 namespace MPLibrary.GCN
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct TextureInfo
+    public class TextureInfo
     {
-        public uint NameOffset;
-        public uint MaxLOD;
-        public byte Format;
-        public byte Bpp; //to determine pallete types CI4/CI8
-        public ushort Width;
-        public ushort Height;
-        public ushort PaletteEntries;
-        public uint TextureTint;
-        public int PaletteIndex;
-        public uint Padding;// usually 0
-        public uint DataOffset;
+        public uint NameOffset; //0x0
+        public uint MaxLOD; //0x4
+        public byte Format; //0x8
+        public byte Bpp; //0x9 //to determine pallete types CI4/CI8
+        public ushort Width; //0xA
+        public ushort Height; //0xC
+        public ushort PaletteEntries; //0xE
+        public uint TextureTint; //0x10 Used for grayscale (I4, I8) types. Color blends with tev stages as color
+        public int PaletteIndex; //0x14
+        public uint Padding;//0x18 // usually 0
+        public uint DataOffset; //0x1C
     }
 
     public class TextureSection : HSFSection

@@ -5,41 +5,37 @@ using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core.IO;
 using System.Runtime.InteropServices;
-using OpenTK;
+using System.Numerics;
+using GCNRenderLibrary.Rendering;
 
 namespace MPLibrary.GCN
 {
     public class FogSection : HSFSection
     {
-        public Vector4 ColorStart; //Often 76,76,76,0
-        public Vector4 ColorEnd;
+        public GX.FogType FogType; //Set at runtime, value not used
 
-        public float Start { get; set; }
-        public float End { get; set; }
+        public float Start;
+        public float End;
+
+        public Vector4 Color;
 
         public override void Read(FileReader reader, HsfFile header) {
-            ColorStart = new Vector4(
-                reader.ReadByte(), reader.ReadByte(),
-                reader.ReadByte(), reader.ReadByte());
+            FogType = (GX.FogType)reader.ReadUInt32();
             Start = reader.ReadSingle();
             End = reader.ReadSingle();
-            ColorEnd = new Vector4(
+            Color = new Vector4(
                 reader.ReadByte(), reader.ReadByte(),
-                reader.ReadByte(), reader.ReadByte());
-        }
+                reader.ReadByte(), reader.ReadByte()) / 255.0f;
+        }   
 
         public override void Write(FileWriter writer, HsfFile header) { 
-            writer.Write((byte)ColorStart.X);
-            writer.Write((byte)ColorStart.Y);
-            writer.Write((byte)ColorStart.Z);
-            writer.Write((byte)ColorStart.W);
+            writer.Write((uint)(FogType));
             writer.Write(Start);
             writer.Write(End);
-            writer.Write((byte)ColorEnd.X);
-            writer.Write((byte)ColorEnd.Y);
-            writer.Write((byte)ColorEnd.Z);
-            writer.Write((byte)ColorEnd.W);
+            writer.Write((byte)(Color.X * 255));
+            writer.Write((byte)(Color.Y * 255));
+            writer.Write((byte)(Color.Z * 255));
+            writer.Write((byte)(Color.W * 255));
         }
-    }   
-
+    }
 }

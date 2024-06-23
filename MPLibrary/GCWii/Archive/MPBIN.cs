@@ -68,8 +68,21 @@ namespace MPLibrary.GCN
             }
         }
 
+        public static MPBIN LoadFile(string filePath)
+        {
+           return new MPBIN(filePath);
+        }
+
         public void Load(System.IO.Stream stream) {
             Read(FileInfo.FileName, stream);
+        }
+
+        public void Save(string filePath)
+        {
+            using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            {
+                Save(fs);
+            }
         }
 
         void Read(string FileName, System.IO.Stream stream)
@@ -197,6 +210,8 @@ namespace MPLibrary.GCN
                 writer.Write(new uint[files.Count]); //reserve space for offsets
                 for (int i = 0; i < files.Count; i++)
                 {
+                    files[i].SaveFileFormat();
+
                     uint uncomp_size = (uint)files[i].FileData.Length;
 
                     writer.WriteUint32Offset(4 + (i * 4));

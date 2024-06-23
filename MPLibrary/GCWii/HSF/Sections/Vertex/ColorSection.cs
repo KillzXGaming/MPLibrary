@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core.IO;
 using System.Runtime.InteropServices;
-using OpenTK;
+using System.Numerics;
 
 namespace MPLibrary.GCN
 {
@@ -32,11 +32,11 @@ namespace MPLibrary.GCN
         {
             long posStart = writer.Position;
 
-            var meshes = header.Meshes.Where(x => x.Colors.Count > 0).ToList();
+            var meshes = header.Meshes.Where(x => x.Color0.Count > 0).ToList();
             foreach (var mesh in meshes)
             {
                 writer.Write(header.GetStringOffset(mesh.Name));
-                writer.Write(mesh.Colors.Count);
+                writer.Write(mesh.Color0.Count);
                 writer.Write(uint.MaxValue);
             }
 
@@ -47,12 +47,12 @@ namespace MPLibrary.GCN
 
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
-                for (int j = 0; j < meshes[i].Colors.Count; j++)
+                for (int j = 0; j < meshes[i].Color0.Count; j++)
                 {
-                    writer.Write((byte)(meshes[i].Colors[j].X * 255));
-                    writer.Write((byte)(meshes[i].Colors[j].Y * 255));
-                    writer.Write((byte)(meshes[i].Colors[j].Z * 255));
-                    writer.Write((byte)(meshes[i].Colors[j].W * 255));
+                    writer.Write((byte)(meshes[i].Color0[j].X * 255));
+                    writer.Write((byte)(meshes[i].Color0[j].Y * 255));
+                    writer.Write((byte)(meshes[i].Color0[j].Z * 255));
+                    writer.Write((byte)(meshes[i].Color0[j].W * 255));
                 }
             }
             writer.Align(4);

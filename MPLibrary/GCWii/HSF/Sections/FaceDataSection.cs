@@ -35,10 +35,12 @@ namespace MPLibrary.GCN
             var ExtOffset = pos;
             foreach (var att in Components)
                 ExtOffset += att.DataCount * 48;
-            foreach (var comp in Components) {
+            foreach (var comp in Components)
+            {
                 List<PrimitiveObject> primatives = new List<PrimitiveObject>();
                 reader.SeekBegin(pos + comp.DataOffset);
-                for (int i = 0; i < comp.DataCount; i++) {
+                for (int i = 0; i < comp.DataCount; i++)
+                {
                     var prim = new PrimitiveObject();
                     primatives.Add(prim);
 
@@ -52,11 +54,12 @@ namespace MPLibrary.GCN
                         primCount = 4;
 
                     prim.Vertices = reader.ReadMultipleStructs<VertexGroup>(primCount).ToArray();
-                    if (prim.Type == PrimitiveType.TriangleStrip) {
+                    if (prim.Type == PrimitiveType.TriangleStrip)
+                    {
                         primCount = reader.ReadInt32();
-                        var offset = reader.ReadUInt32();
+                        var stripIndex = reader.ReadUInt32();
                         var temp = reader.Position;
-                        reader.Position = ExtOffset + offset * 8;
+                        reader.Position = ExtOffset + stripIndex * 8;
 
                         var verts = reader.ReadMultipleStructs<VertexGroup>(primCount).ToArray();
                         reader.Position = temp;

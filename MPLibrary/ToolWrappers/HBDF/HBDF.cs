@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core;
 using Toolbox.Core.IO;
-using Toolbox.Core.OpenGL;
 using OpenTK;
 using Toolbox.Core.Nitro;
 using OpenTK.Graphics.OpenGL;
@@ -29,8 +28,6 @@ namespace MPLibrary.DS
                 return reader.CheckSignature(4, "HBDF");
             }
         }
-
-        public ModelRenderer Renderer => new ModelRenderer(ToGeneric());
 
         public HsdfFile Header;
 

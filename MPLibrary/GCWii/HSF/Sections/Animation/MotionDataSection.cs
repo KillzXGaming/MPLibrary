@@ -37,31 +37,65 @@ namespace MPLibrary.GCN
         Normal = 2,
         Object = 3,
         Unknown = 4,
+        ClusterCurve = 5,
+        ClusterWeightCurve = 6,
+        Camera = 7,
+        Light = 8,
         Material = 9,
         Attriubute = 10,
     }
 
     public enum TrackEffect : short
     {
+        AmbientColorR = 0,
+        AmbientColorG = 1,
+        AmbientColorB = 2,
+
         TranslateX = 8,
         TranslateY = 9,
         TranslateZ = 10,
+
+        LightAimX = 11, //or camera target x
+        LightAimY = 12, //or camera target y
+        LightAimZ = 13, //or camera target z
+
+        CameraAspect = 14,
+        CameraFov = 15,
+
+        Visible = 24,
+
         RotationX = 28,
         RotationY = 29,
         RotationZ = 30,
         ScaleX = 31,
         ScaleY = 32,
         ScaleZ = 33,
-
         B_TranslateX = 34,
         B_TranslateY = 35,
         B_TranslateZ = 36,
         B_RotationX = 37,
         B_RotationY = 38,
         B_RotationZ = 39,
+        MorphBlend = 40,
         B_ScaleX = 41,
         B_ScaleY = 42,
         B_ScaleZ = 43,
+
+        MaterialColorR = 49,
+        MaterialColorG = 50,
+        MaterialColorB = 51,
+        ShadowColorR = 52,
+        ShadowColorG = 53,
+        ShadowColorB = 54,
+        HiliteScale = 55,
+        MatUnknown2 = 56,
+        Transparency = 57,
+        MatUnknown3 = 58,
+        MatUnknown4 = 59,
+        ReflectionIntensity = 60,
+        MatUnknown5 = 61,
+        CombinerBlending = 62,
+        TextureIndex = 67,
     }
 
     public enum MaterialTrackEffect : short
@@ -128,6 +162,9 @@ namespace MPLibrary.GCN
         B_ScaleX = 41,
         B_ScaleY = 42,
         B_ScaleZ = 43,
+
+        CombinerBlending = 62,
+        TextureIndex = 67,
     }
     public enum InterpolationMode : short
     {
@@ -183,11 +220,8 @@ namespace MPLibrary.GCN
                     else
                         track.Constant = reader.ReadSingle();
 
-                    Console.WriteLine($"{j} TrackMode {track.mode} valueIndex {track.valueIndex} effect {track.effect} interp {track.interpolate_type} Constant {track.Constant}");
-
                     if (track.valueIndex != 0)
                     {
-                        //Console.WriteLine($"valueIndex {track.valueIndex} str {track.stringOffset}");
                     }
 
                     anm.trackInfo.Add(track);
@@ -203,12 +237,16 @@ namespace MPLibrary.GCN
                 for (int j = 0; j < anim.trackInfo.Count; j++)
                 {
                     var track = anim.trackInfo[j];
+
                     string name = header.GetString(reader, (uint)track.stringOffset);
                     if (track.stringOffset == -1) {
                         name = $"{track.mode}_{track.valueIndex}";
                     }
                     else if (track.valueIndex > 0)
                         name = $"{name}_{track.valueIndex}";
+
+                  //  if ((track.mode == TrackMode.Attriubute || track.mode == TrackMode.Material) && (track.keyframe_count > 1 || track.Constant != 0))
+                    //    Console.WriteLine($"{track.mode} valueIndex {track.valueIndex} str {name}");
 
                     if (!animationNodes.ContainsKey(name))
                         animationNodes.Add(name, new AnimationNode() 
@@ -277,6 +315,7 @@ namespace MPLibrary.GCN
 
                     currentGroup.TrackList.Add(new AnimTrack(currentGroup)
                     {
+                        Name = name,
                         ConstantUnk = track.keyframe_count, //When constant used, value is used for something else?
                         KeyFrames = keyFrames,
                         TrackEffect = track.effect,
@@ -290,6 +329,8 @@ namespace MPLibrary.GCN
 
                 foreach (var group in animationNodes)
                     anim.AnimGroups.Add(group.Value);
+
+                anim.Init();
             }
         }
 
@@ -302,7 +343,7 @@ namespace MPLibrary.GCN
                 case InterpolationMode.Step: return STInterpoaltionType.Step;
                 case InterpolationMode.Constant: return STInterpoaltionType.Constant;
                 case InterpolationMode.Bitmap: return STInterpoaltionType.Bitmap;
-                default: return STInterpoaltionType.Constant;
+                default: throw new Exception();
             }
         }
 
@@ -315,7 +356,7 @@ namespace MPLibrary.GCN
                 case STInterpoaltionType.Step: return InterpolationMode.Step;
                 case STInterpoaltionType.Constant: return InterpolationMode.Constant;
                 case STInterpoaltionType.Bitmap: return InterpolationMode.Bitmap;
-                default: return InterpolationMode.Constant;
+                default: throw new Exception();
             }
         }
 

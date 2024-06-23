@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core.IO;
-using OpenTK;
+using System.Numerics;
 
 namespace MPLibrary.GCN
 {
@@ -21,7 +21,7 @@ namespace MPLibrary.GCN
 
                 List<Vector3> positions = new List<Vector3>();
                 for (int i = 0; i < comp.DataCount; i++)
-                    positions.Add(reader.ReadVec3());
+                    positions.Add(new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
 
                 header.AddPositionComponent(Components.IndexOf(comp), positions);
             }
@@ -41,12 +41,14 @@ namespace MPLibrary.GCN
 
             long dataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++) {
-                meshes[i].ObjectData.VertexIndex = i;
-
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
                 for (int j = 0; j < meshes[i].Positions.Count; j++)
-                    writer.Write(meshes[i].Positions[j]);
+                {
+                    writer.Write(meshes[i].Positions[j].X);
+                    writer.Write(meshes[i].Positions[j].Y);
+                    writer.Write(meshes[i].Positions[j].Z);
+                }
             }
             writer.Align(4);
         }

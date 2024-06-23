@@ -20,7 +20,7 @@ namespace MPLibrary.GCN
     public class PaletteSection : HSFSection
     {
         public List<PaletteInfo> Palettes = new List<PaletteInfo>();
-        public List<byte[]> PaletteData = new List<byte[]>();
+        public List<ushort[]> PaletteData = new List<ushort[]>();
 
         public override void Read(FileReader reader, HsfFile header)
         {
@@ -29,7 +29,7 @@ namespace MPLibrary.GCN
             for (int i = 0; i < Palettes.Count; i++)
             {
                 reader.SeekBegin(pos + Palettes[i].DataOffset);
-                PaletteData.Add(reader.ReadBytes(Palettes[i].NumPalette * 2));
+                PaletteData.Add(reader.ReadUInt16s(Palettes[i].NumPalette));
             }
 
             header.AddPalette(Palettes, PaletteData);

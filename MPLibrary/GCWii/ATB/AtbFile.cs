@@ -18,6 +18,8 @@ namespace MPLibrary.GCN
 
         public ushort NumReferences { get; set; }
 
+        public int FileIndex = 0;
+
         public AtbFile() { }
 
         public AtbFile(Stream stream)
@@ -146,12 +148,14 @@ namespace MPLibrary.GCN
                     writer.Write(Textures[i].Bpp);
                     writer.Write(Textures[i].Format);
                     if (Textures[i].PaletteData != null)
-                        writer.Write((ushort)Textures[i].PaletteData.Length / 2);
+                        writer.Write((ushort)(Textures[i].PaletteData.Length / 2));
                     else
                         writer.Write((ushort)0);
                     writer.Write(Textures[i].Width);
                     writer.Write(Textures[i].Height);
                     writer.Write(Textures[i].ImageData.Length);
+                    writer.Write(0);
+                    writer.Write(0);
                 }
 
                 writer.AlignBytes(32, 0x88);
@@ -176,7 +180,7 @@ namespace MPLibrary.GCN
         public ushort Height;
 
         public byte[] ImageData;
-        public byte[] PaletteData;
+        public byte[] PaletteData = new byte[0];
     }
 
     public class BankData
@@ -206,7 +210,7 @@ namespace MPLibrary.GCN
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class AnimFrame
     {
-        public short PatternIndex;
+        public short PatternIndex;  
         public short FrameLength;
         public short ShiftX;
         public short ShiftY;
@@ -221,7 +225,7 @@ namespace MPLibrary.GCN
         public short CenterX;
         public short CenterY;
         public short Width;
-        public short Height ;
+        public short Height;
         public short Padding;
 
         public PatternData(FileReader reader)

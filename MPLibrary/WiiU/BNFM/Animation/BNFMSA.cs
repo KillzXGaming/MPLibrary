@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Toolbox.Core.IO;
 using Toolbox.Core.Animations;
+using MPLibrary.MP10.IO;
 
 namespace MPLibrary.MP10
 {
@@ -15,7 +15,7 @@ namespace MPLibrary.MP10
             BNFM_SkeletalAnimation anim = new BNFM_SkeletalAnimation();
             anim.Name = "Animation0";
 
-            List<BNFM_Bone> Bones = new List<BNFM_Bone>();
+            List<BnfmBone> Bones = new List<BnfmBone>();
 
             //Base data
             uint numBoneInfos = reader.ReadUInt32();
@@ -45,7 +45,7 @@ namespace MPLibrary.MP10
             if (numBoneInfos > 0) {
                 reader.SeekBegin(boneInfoOffset);
                 for (int i = 0; i < numBoneInfos; i++)
-                    Bones.Add(new BNFM_Bone(header, reader));
+                    Bones.Add(reader.ReadSection<BnfmBone>());
             }
             //This is for multiple animations?
             //Seems to be 1 so skip using this for now
@@ -53,7 +53,7 @@ namespace MPLibrary.MP10
                 reader.SeekBegin(animInfoOffset);
                 for (int i = 0; i < numAnimInfos; i++)
                 {
-                    string name = header.GetString(reader, reader.ReadUInt32());
+                    string name = reader.LoadString();
                     uint nameHash = reader.ReadUInt32();
                     uint trackOffset = reader.ReadUInt32();
                     uint numBones = reader.ReadUInt32();
@@ -83,7 +83,7 @@ namespace MPLibrary.MP10
                 anim.AnimGroups.Add(group);
 
                 using (reader.TemporarySeek(boneOffset, System.IO.SeekOrigin.Begin)) {
-                    group.Name = header.GetString(reader, reader.ReadUInt32());
+                    group.Name = reader.LoadString();
                 }
 
                 LoadTrackList(trackOffsets, group, reader);

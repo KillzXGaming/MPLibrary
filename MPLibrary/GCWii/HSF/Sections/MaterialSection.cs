@@ -11,23 +11,33 @@ namespace MPLibrary.GCN
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public class MaterialObject
     {
-        public uint NameOffset;
-        public int Unknown;
-        public ushort AltFlags;
-        public byte VertexMode;
-        public ColorRGB_8 LitAmbientColor;
-        public ColorRGB_8 AmbientColor;
-        public ColorRGB_8 ShadowColor;
-        public float HiliteScale;
-        public float Unknown2;
-        public float TransparencyInverted;
-        public float Unknown3;
-        public float Unknown4;
-        public float ReflectionIntensity;
-        public float Unknown5;
-        public int MaterialFlags;
-        public int TextureCount;
-        public int FirstSymbol;
+        public uint NameOffset; //0
+        public int Unknown; //0x4
+        public ushort AltFlags; //0x8
+        public LightingChannelFlags VertexMode; //0xA
+        public ColorRGB_8 AmbientColor; //0xB
+        public ColorRGB_8 MaterialColor; //0x1E
+        public ColorRGB_8 ShadowColor; //0x11
+        public float HiliteScale; //0x14
+        public float Unknown2; //0x18
+        public float TransparencyInverted; //0x1C
+        public float Unknown3; //0x20
+        public float Unknown4; //0x24
+        public float ReflectionIntensity; //0x28
+        public float Unknown5 = 1f; //0x2C
+        public int MaterialFlags; //0x30
+        public int TextureCount; //0x34
+        public int FirstSymbol; //0x38
+    }
+
+    public enum LightingChannelFlags : byte
+    {
+        NoLighting = 0, //Flat shading
+        Lighting = 1, //Lighting used
+        LightingSpecular = 2, //Second light channel used for specular
+        LightingSpecular2 = 3, //Same output as LightingSpecular. Not sure if used.
+        VertexAlphaOnly = 4, //Vertex colors but only with alpha
+        VertexColorsWithAlpha = 5, //Vertex colors + alpha
     }
 
     public class MatAnimController

@@ -14,35 +14,67 @@ namespace MPLibrary.GCN
         public uint NameOffset;
         public int TexAnimOffset; //Replaced with Pointer to Texture Animation at Runtime
         public ushort Unknown1;
-        public byte BlendingFlag; //Some king of blending flag. 2 is default. Often changed for multi textures
+        public CombinerBlend BlendingFlag = CombinerBlend.Additive;
         public byte AlphaFlag; //Alpha textures use 1 else 0
+        public float BlendTextureAlpha = 1.0f; //Blend with texture alpha else use register color 2 from alpha output
+        public int Unknown2 = 1;
+        public float NbtEnable = 0.0f; //1.0 for enabled, 0.0 for disabled.
+        public float Unknown3 = -1f;
+        public float Unknown4;
+        public float TextureEnable = 1.0f; //1.0 for enabled, 0.0 for disabled
         public float Unknown11;
-        public int Unknown4;
-        public float NbtEnable; //1.0 for enabled, 0.0 for disabled
-        public float Unknown3;
-        public float Unknown12;
-        public float TextureEnable; //1.0 for enabled, 0.0 for disabled
-        public float DontEdit;
         public AttrTransform TexAnimStart;
         public AttrTransform TexAnimEnd;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-        public byte[] Unks;
+        public float Unknown13;
 
-        public float Unknown5;
-        public float Unknown6;
-        public float Unknown7;
+        public Vector3XYZ Rotation = new Vector3XYZ();
 
-        public int WrapS;
-        public int WrapT;
+        public float Unknown5 = 1.0f;
+        public float Unknown6 = 1.0f;
+        public float Unknown7 = 1.0f;
 
-        public int Unknown8;
-        public int Unknown9;
-        public int Unknown10;
+        public WrapMode WrapS = WrapMode.Repeat;
+        public WrapMode WrapT = WrapMode.Repeat;
 
-        public int MipmapMaxLOD;
+        public int Unknown8 = 1;
+        public int Unknown9 = 79;
+        public int Unknown10 = 0;
+
+        public int MipmapMaxLOD = 1;
         public int TextureFlags;
         public int TextureIndex;
+
+        public AttributeData()
+        {
+            TexAnimStart = new AttrTransform()
+            {
+                Scale = new Vector2XYZ(1, 1),
+            };
+            TexAnimEnd = new AttrTransform()
+            {
+                Scale = new Vector2XYZ(1, 1),
+            };
+        }
+    }
+
+    public enum CombinerBlend : byte
+    {
+        /// <summary>
+        /// Mixes current and last stages by texture alpha with a new stage
+        /// </summary>
+        TransparencyMix = 0,
+        /// <summary>
+        /// Combines current and last stage by adding.
+        /// </summary>
+        Additive = 2,
+    }
+
+    public enum WrapMode
+    {
+        Clamp,
+        Repeat,
+        Mirror,
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -65,6 +97,10 @@ namespace MPLibrary.GCN
         public float ScaleX { get; set; }
         public float ScaleY { get; set; }
         public float ScaleZ { get; set; }
+
+        public int TextureIndex { get; set; } = -1;
+
+        public float CombinerBlending { get; set; } = 1.0f;
     }
 
     public class AttributeSection : HSFSection

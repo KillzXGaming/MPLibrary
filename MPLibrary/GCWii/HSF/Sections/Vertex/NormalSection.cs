@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Toolbox.Core.IO;
-using OpenTK;
+using System.Numerics;
+using static Toolbox.Core.DDS;
 
 namespace MPLibrary.GCN
 {
@@ -12,45 +13,53 @@ namespace MPLibrary.GCN
     {
         public List<ComponentData> Components = new List<ComponentData>();
 
-        public DataType TypeFlag;
-
-        public enum DataType
-        {
-            Float,
-            Sbyte,
-        }
+        private long startingOffset;
 
         public override void Read(FileReader reader, HsfFile header)
         {
             Components = reader.ReadMultipleStructs<ComponentData>(this.Count);
-            long startingOffset = reader.Position;
-            TypeFlag = DataType.Float;
+            startingOffset = reader.Position;
 
-            if (Components.Count >= 2) {
-                var pos = startingOffset + Components[0].DataOffset + Components[0].DataCount * 3;
-                if (pos % 0x20 != 0)
-                    pos += 0x20 - (pos % 0x20);
-                if (Components[1].DataOffset == pos - startingOffset)
-                    TypeFlag = DataType.Sbyte;
-            }
-            else
-                TypeFlag = DataType.Sbyte;
+            foreach (var node in header.ObjectData.Objects)
+            {
+                var data = node.Data;
 
-            foreach (var comp in Components) {
+                if (data.NormalIndex <= -1 || data.NormalIndex > Components.Count)
+                    continue;
+
+                var comp = Components[data.NormalIndex];
                 reader.SeekBegin(startingOffset + comp.DataOffset);
 
                 var normals = new List<Vector3>();
                 for (int i = 0; i < comp.DataCount; i++)
                 {
-                    if (TypeFlag == DataType.Sbyte)
+                    if (data.CenvCount == 0)
                         normals.Add(new Vector3(
-                            reader.ReadSByte() / (float)sbyte.MaxValue, 
+                            reader.ReadSByte() / (float)sbyte.MaxValue,
                             reader.ReadSByte() / (float)sbyte.MaxValue,
                             reader.ReadSByte() / (float)sbyte.MaxValue));
                     else
                         normals.Add(new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
                 }
                 header.AddNormalComponent(Components.IndexOf(comp), normals);
+            }
+        }
+
+        public void GetComponentData(FileReader reader, int index, bool is_sbyte)
+        {
+            var comp = Components[index];
+            reader.SeekBegin(startingOffset + comp.DataOffset);
+
+            var normals = new List<Vector3>();
+            for (int i = 0; i < comp.DataCount; i++)
+            {
+                if (is_sbyte)
+                    normals.Add(new Vector3(
+                        reader.ReadSByte() / (float)sbyte.MaxValue,
+                        reader.ReadSByte() / (float)sbyte.MaxValue,
+                        reader.ReadSByte() / (float)sbyte.MaxValue));
+                else
+                    normals.Add(new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
             }
         }
 
@@ -66,26 +75,25 @@ namespace MPLibrary.GCN
                 writer.Write(uint.MaxValue);
             }
 
-            if (meshes.Count == 1)
-                TypeFlag = DataType.Sbyte;
-
             long dataPos = writer.Position;
             for (int i = 0; i < meshes.Count; i++)
             {
-                meshes[i].ObjectData.NormalIndex = i;
-
                 writer.Align(0x20);
                 writer.WriteUint32Offset(posStart + 8 + (i * 12), dataPos);
                 for (int j = 0; j < meshes[i].Normals.Count; j++)
                 {
-                    if (TypeFlag == DataType.Sbyte)
+                    if (!meshes[i].HasEnvelopes)
                     {
                         writer.Write((sbyte)(meshes[i].Normals[j].X * sbyte.MaxValue));
                         writer.Write((sbyte)(meshes[i].Normals[j].Y * sbyte.MaxValue));
                         writer.Write((sbyte)(meshes[i].Normals[j].Z * sbyte.MaxValue));
                     }
                     else
-                        writer.Write(meshes[i].Normals[j]);
+                    {
+                        writer.Write(meshes[i].Normals[j].X);
+                        writer.Write(meshes[i].Normals[j].Y);
+                        writer.Write(meshes[i].Normals[j].Z);
+                    }
                 }
             }
             writer.Align(4);

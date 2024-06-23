@@ -20,5 +20,4 @@ namespace MPLibrary.GCN
             writer.Write(SymbolIndices);
         }
     }
-
 }
