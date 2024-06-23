@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="GCNRenderLibrary">
+      <HintPath>Lib\GCNRenderLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="GLFrameworkEngine">
+      <HintPath>Lib\GLFrameworkEngine.dll</HintPath>
+    </Reference>
     <Reference Include="IONET">
       <HintPath>..\..\Track Studio\Lib\IONET.dll</HintPath>
     </Reference>
@@ -37,8 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\GCNRenderLibrary\GCNRenderLibrary.csproj" />
-    <ProjectReference Include="..\..\Toolbox.Core\Toolbox.Core.csproj" />
+    <ProjectReference Include="..\Toolbox.Core\Toolbox.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,4 @@
+[submodule "Toolbox.Core"]
+	path = Toolbox.Core
+	url = https://github.com/KillzXGaming/Toolbox.Core
+	branch = map-studio

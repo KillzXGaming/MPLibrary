@@ -9,6 +9,7 @@ using Toolbox.Core.Collada;
 using Toolbox.Core.IO;
 using MPLibrary.GCN;
 using MPLibrary;
+using System.Reflection;
 
 namespace HSFConverter
 {
@@ -16,18 +17,20 @@ namespace HSFConverter
     {
         static void Main(string[] args)
         {
-            foreach (var arg in args) {
-               if (Directory.Exists(arg))
+            foreach (var arg in args)
+            {
+                if (Directory.Exists(arg))
                 {
                     string folder = Path.GetFileName(arg);
                     string daeFile = $"{arg}/{folder}.dae";
                     var importModel = (DaeFile)STFileLoader.OpenFileFormat(daeFile);
 
-                    HSF hsf = new HSF() { FileInfo = new File_Info() };
-                    hsf.FromGeneric(importModel.Scene);
-                    STFileSaver.SaveFileFormat(hsf, $"{folder}.new.hsf");
+                    HsfFile hsf = new HsfFile();
+                    HSFModelImporter.Import(arg, hsf, new HSFModelImporter.ImportSettings());
+                    hsf.Save($"{folder}.new.hsf");
                 }
-               else if (File.Exists(arg)) {
+                else if (File.Exists(arg))
+                {
                     string folder = Path.GetFileNameWithoutExtension(arg);
                     if (!Directory.Exists(folder))
                         Directory.CreateDirectory(folder);
