@@ -43,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Toolbox.Core\Toolbox.Core.csproj" />
+    <ProjectReference Include="..\..\Toolbox.Core\Toolbox.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
