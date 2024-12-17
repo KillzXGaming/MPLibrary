@@ -198,7 +198,7 @@ namespace MPLibrary.GCN
                             vertex.Normal = Vector3.TransformNormal(p.Normals[i], transform);
 
                         if (p.TexCoord0.Count > 0) //Flip UVs
-                            vertex.SetUV(p.TexCoord0[i].X, p.TexCoord0[i].Y, 0);
+                            vertex.SetUV(p.TexCoord0[i].X, 1.0f - p.TexCoord0[i].Y, 0);
                         else if (hasUVs) //Force UVs to be added as mesh uses them in other polygons
                             vertex.SetUV(0, 0, 0);
 
