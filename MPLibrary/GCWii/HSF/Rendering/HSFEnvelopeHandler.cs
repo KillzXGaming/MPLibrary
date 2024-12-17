@@ -162,7 +162,7 @@ namespace MPLibrary.GCN
 
             foreach (var mesh in hsfMesh.GXMeshes)
             {
-                mesh.Value.SceneNode.UpdatePositions();
+                mesh.Value.SceneNode?.UpdatePositions();
             }
         }
     }
