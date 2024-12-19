@@ -196,6 +196,19 @@ namespace MPLibrary.GCN
 
                         if (p.Normals.Count > i)
                             vertex.Normal = Vector3.TransformNormal(p.Normals[i], transform);
+                        else
+                            vertex.Normal = new Vector3(0, 1, 0);
+
+                        vertex.Normal = Vector3.Normalize(vertex.Normal);
+
+                        if (vertex.Normal == Vector3.Zero ||
+                            vertex.Normal.Length() == 0 ||
+                            float.IsNaN(vertex.Normal.X) ||
+                            float.IsNaN(vertex.Normal.Y) ||
+                            float.IsNaN(vertex.Normal.Z))
+                        {
+                            vertex.Normal = new Vector3(0, 1, 0);
+                        }
 
                         if (p.TexCoord0.Count > 0) //Flip UVs
                             vertex.SetUV(p.TexCoord0[i].X, 1.0f - p.TexCoord0[i].Y, 0);
